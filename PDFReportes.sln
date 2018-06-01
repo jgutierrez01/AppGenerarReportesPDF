@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.24720.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PDFReportes", "PDFReportes\PDFReportes.csproj", "{71F1EA26-07B2-4A08-80D9-6FC52EBAB0DD}"
+EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "InstaladorReportesPDF", "InstaladorReportesPDF\InstaladorReportesPDF.vdproj", "{629F6735-EF7C-494C-8C27-CD8AA8506A68}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{71F1EA26-07B2-4A08-80D9-6FC52EBAB0DD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{71F1EA26-07B2-4A08-80D9-6FC52EBAB0DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{71F1EA26-07B2-4A08-80D9-6FC52EBAB0DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{71F1EA26-07B2-4A08-80D9-6FC52EBAB0DD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{629F6735-EF7C-494C-8C27-CD8AA8506A68}.Debug|Any CPU.ActiveCfg = Debug
+		{629F6735-EF7C-494C-8C27-CD8AA8506A68}.Release|Any CPU.ActiveCfg = Release
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
