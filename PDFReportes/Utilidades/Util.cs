@@ -44,8 +44,8 @@ namespace PDFReportes.Utilidades
                 string path = ConfigurationManager.AppSettings["RutaReportes"];
                 string usuario = ConfigurationManager.AppSettings["Usuario"];
                 string pass = ConfigurationManager.AppSettings["Pass"];                
-                using (new NetworkConnection(path, new NetworkCredential(usuario, pass)))
-                {
+                //using (new NetworkConnection(path, new NetworkCredential(usuario, pass)))
+                //{
                     if (Directory.Exists(path))
                     {
                         existeRuta = true;
@@ -54,20 +54,54 @@ namespace PDFReportes.Utilidades
                     {
                         existeRuta = false;
                     }
-                }
+                //}
             }
             catch (Exception)
             {
                 return false;
             }
             return existeRuta;
-        }        
-        public List<Embarque> ObtieneEmbarques()
+        }
+        /// <summary>
+        /// EMPIEZAN METODOS PARA OBTENER EN BASE DE DATOS
+        /// </summary>
+        /// <returns></returns>
+        public List<Proyecto> ObtenerProyectos()
         {
             try
             {
                 ObjetosSQL sql = new ObjetosSQL();
-                DataTable tblEmbarques = sql.EjecutaDataAdapter("PDFReportes_Get_NumeroEmbarque");                
+                DataTable tblProyecto = sql.EjecutaDataAdapter("ReportesPDF_GET_Proyectos");
+                List<Proyecto> listaProyectos = new List<Proyecto>();
+                if (tblProyecto.Rows.Count > 0)
+                    listaProyectos.Add(new Proyecto());
+                for (int i = 0; i < tblProyecto.Rows.Count; i++)
+                {
+                    listaProyectos.Add(new Proyecto
+                    {
+                        ProyectoID = int.Parse(tblProyecto.Rows[i]["ProyectoID"].ToString()),
+                        Nombre = tblProyecto.Rows[i]["Nombre"].ToString(),
+                        RutaTraveler = tblProyecto.Rows[i]["RutaTraveler"].ToString(),
+                        RutaReportes = tblProyecto.Rows[i]["RutaReportes"].ToString(),
+                        FolioDimensional = tblProyecto.Rows[i]["FolioDimensional"].ToString()                       
+                    });
+                }
+                return listaProyectos;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        public List<Embarque> ObtieneEmbarques(int ProyectoID)
+        {
+            try
+            {
+                ObjetosSQL sql = new ObjetosSQL();
+                //DataTable tblEmbarques = sql.EjecutaDataAdapter("PDFReportes_Get_NumeroEmbarque");
+                string[,] parametros = { { "@ProyectoID", ProyectoID.ToString() } };
+                DataTable tblEmbarques = sql.EjecutaDataAdapter("ReportesPDF_GET_Embarques", parametros);
                 List<Embarque> listaEmbarque = new List<Embarque>();
                 if(tblEmbarques.Rows.Count > 0)                
                     listaEmbarque.Add(new Embarque());
@@ -75,8 +109,9 @@ namespace PDFReportes.Utilidades
                 {
                     listaEmbarque.Add(new Embarque
                     {
-                        EmbarqueID = int.Parse(tblEmbarques.Rows[i][0].ToString()),
-                        NumeroEmbarque = tblEmbarques.Rows[i][1].ToString()   
+                        EmbarqueID = int.Parse(tblEmbarques.Rows[i]["EmbarqueID"].ToString()),
+                        NumeroEmbarque = tblEmbarques.Rows[i]["NumeroEmbarque"].ToString(),
+                        OrigenBD = int.Parse(tblEmbarques.Rows[i]["OrigenBD"].ToString())
                     });
                 }
                 return listaEmbarque;
@@ -85,23 +120,31 @@ namespace PDFReportes.Utilidades
             {                
                 return null;                
             }
-        }        
-        public List<Spool> ObtenerNumeroControl(string NumeroEmbarque)
+        }
+
+        //public List<Spool> ObtenerNumeroControl(string NumeroEmbarque)
+        public List<Spool> ObtenerNumeroControl(int ProyectoID, Embarque emb)
         {
             try
             {
                 ObjetosSQL sql = new ObjetosSQL();
-                string[,] parametro = { { "@NumeroEmbarque", NumeroEmbarque } };
-                DataTable tblOrdenTrabajo = sql.EjecutaDataAdapter("PDFReportes_Get_OrdenTrabajoXEmbarque", parametro);
+                string[,] parametro = {
+                    { "@ProyectoID", ProyectoID.ToString() },
+                    { "@EmbarqueID", emb.EmbarqueID.ToString() },
+                    { "@OrigenBD", emb.OrigenBD.ToString() }
+                };                
+                //DataTable tblOrdenTrabajo = sql.EjecutaDataAdapter("PDFReportes_Get_OrdenTrabajoXEmbarque", parametro);
+                DataTable tblOrdenTrabajo = sql.EjecutaDataAdapter("ReportesPDF_GET_HojasTravelers", parametro);
                 List <Spool> listaNumControl = new List<Spool>();
                 if(tblOrdenTrabajo.Rows.Count > 0)
                 {
                     for(int i = 0; i < tblOrdenTrabajo.Rows.Count; i++)
                     {
                         listaNumControl.Add(new Spool {
-                            OrdenTrabajo = tblOrdenTrabajo.Rows[i][0].ToString(),
-                            Consecutivo = tblOrdenTrabajo.Rows[i][1].ToString(),
-                            NumeroPaginas = int.Parse(tblOrdenTrabajo.Rows[i][2].ToString())                            
+                            NumeroControl =  tblOrdenTrabajo.Rows[i]["NumeroControl"].ToString(),
+                            OrdenTrabajo = tblOrdenTrabajo.Rows[i]["OrdenTrabajo"].ToString(),
+                            Consecutivo = tblOrdenTrabajo.Rows[i]["SpoolID"].ToString(),
+                            NumeroPaginas = int.Parse(tblOrdenTrabajo.Rows[i]["Paginas"].ToString())                            
                         });
                     }
                 }
@@ -112,22 +155,21 @@ namespace PDFReportes.Utilidades
                 return null;
             }
         }        
-        public List<ReportePND> ObtenerReportesPND_PorNumeroControl(string NumeroControl, int TipoPrueba)
+        public List<ReporteTT_PND> ObtenerReportesPND_PorNumeroControl(int ProyectoID, string NumeroControl, int TipoPrueba)
         {
             try
             {
                 ObjetosSQL sql = new ObjetosSQL();
-                string[,] parametro = { { "@NumeroControl", NumeroControl }, { "@TipoPrueba", TipoPrueba.ToString() } };
-                DataTable tblOrdenTrabajo = sql.EjecutaDataAdapter("PDFReporte_GET_PND_PorNumeroControl", parametro);
-                List<ReportePND> listaNumControl = new List<ReportePND>();
+                string[,] parametro = { { "@ProyectoID", ProyectoID.ToString() }, { "@NumeroControl", NumeroControl }, { "@TipoPrueba", TipoPrueba.ToString() } };                
+                DataTable tblOrdenTrabajo = sql.EjecutaDataAdapter("ReportesPDF_GET_ReportesPND", parametro);
+                List<ReporteTT_PND> listaNumControl = new List<ReporteTT_PND>();
                 if (tblOrdenTrabajo.Rows.Count > 0)
                 {
                     for (int i = 0; i < tblOrdenTrabajo.Rows.Count; i++)
                     {
-                        listaNumControl.Add(new ReportePND
+                        listaNumControl.Add(new ReporteTT_PND
                         {                            
-                            NumeroControl = tblOrdenTrabajo.Rows[i]["NumeroControl"].ToString(),
-                            TipoPruebaID = int.Parse(tblOrdenTrabajo.Rows[i]["TipoPruebaID"].ToString()),
+                            NumeroControl = tblOrdenTrabajo.Rows[i]["NumeroControl"].ToString(),                            
                             NumeroReporte = tblOrdenTrabajo.Rows[i]["NumeroReporte"].ToString()                            
                         });
                     }
@@ -139,19 +181,20 @@ namespace PDFReportes.Utilidades
                 return null;
             }
         }
-        public List<ReportePWHT> ObtenerReportePWHT_PorNumeroControl(string NumeroControl)
+        public List<ReporteTT_PND> ObtenerReportesTT_PorNumeroControl(int ProyectoID, string NumeroControl, int TipoPrueba)
         {
             try
             {
                 ObjetosSQL sql = new ObjetosSQL();
-                string[,] parametro = { { "@NumeroControl", NumeroControl } };
-                DataTable tblOrdenTrabajo = sql.EjecutaDataAdapter("PDFReporte_GET_PWHT_PorNumeroControl", parametro);
-                List<ReportePWHT> listaNumControl = new List<ReportePWHT>();
+                string[,] parametro = { { "@ProyectoID", ProyectoID.ToString() }, { "@NumeroControl", NumeroControl }, { "@TipoPrueba", TipoPrueba.ToString() } };
+                //DataTable tblOrdenTrabajo = sql.EjecutaDataAdapter("PDFReporte_GET_PWHT_PorNumeroControl", parametro);
+                DataTable tblOrdenTrabajo = sql.EjecutaDataAdapter("ReportesPDF_GET_ReportesTT", parametro);
+                List<ReporteTT_PND> listaNumControl = new List<ReporteTT_PND>();
                 if (tblOrdenTrabajo.Rows.Count > 0)
                 {
                     for (int i = 0; i < tblOrdenTrabajo.Rows.Count; i++)
                     {
-                        listaNumControl.Add(new ReportePWHT
+                        listaNumControl.Add(new ReporteTT_PND
                         {
                             NumeroControl = tblOrdenTrabajo.Rows[i]["NumeroControl"].ToString(),                            
                             NumeroReporte = tblOrdenTrabajo.Rows[i]["NumeroReporte"].ToString()
@@ -165,13 +208,14 @@ namespace PDFReportes.Utilidades
                 return null;
             }
         }
-        public List<ReportePintura> ObtenerReportePintura_PorNumeroControl(string NumeroControl, int Reporte)
+        public List<ReportePintura> ObtenerReportePintura_PorNumeroControl(int ProyectoID, string NumeroControl, int Reporte)
         {
             try
             {
                 ObjetosSQL sql = new ObjetosSQL();
-                string[,] parametro = { { "@NumeroControl", NumeroControl }, { "@Reporte", Reporte.ToString() } };
-                DataTable tblOrdenTrabajo = sql.EjecutaDataAdapter("PDFReportes_Pintura_GET_ReportesPinturaXNumeroControl", parametro);
+                string[,] parametro = { { "@ProyectoID", ProyectoID.ToString() }, { "@NumeroControl", NumeroControl }, { "@Reporte", Reporte.ToString() } };
+                //DataTable tblOrdenTrabajo = sql.EjecutaDataAdapter("PDFReportes_Pintura_GET_ReportesPinturaXNumeroControl", parametro);
+                DataTable tblOrdenTrabajo = sql.EjecutaDataAdapter("ReportesPDF_GET_ReportesPintura", parametro);
                 List<ReportePintura> listaNumControl = new List<ReportePintura>();
                 if (tblOrdenTrabajo.Rows.Count > 0)
                 {
@@ -192,18 +236,47 @@ namespace PDFReportes.Utilidades
             }
         }
 
-        public bool ExisteArchivosTraveler(string OrdenTrabajo)
+        public List<NumeroReportePullHoliday> ObtenerReportePullOf_Holiday(int ProyectoID, DataTable NumeroControl, int Reporte)
+        {
+            try
+            {
+                ObjetosSQL sql = new ObjetosSQL();
+                string[,] parametro = {
+                    { "@ProyectoID", ProyectoID.ToString() },
+                    { "@Reporte", Reporte.ToString() }
+                };                
+                DataTable tblNumReporte = sql.EjecutaDataAdapter("ReportesPDF_GET_ReportePullOf_Holiday", NumeroControl, "@Spools", parametro);
+                List<NumeroReportePullHoliday> lstNumReporte = new List<NumeroReportePullHoliday>();
+                if (tblNumReporte.Rows.Count > 0)
+                {
+                    for (int i = 0; i < tblNumReporte.Rows.Count; i++)
+                    {
+                        lstNumReporte.Add(new NumeroReportePullHoliday
+                        {                            
+                            NumeroReporte = tblNumReporte.Rows[i]["NumeroReporte"].ToString()
+                        });
+                    }
+                }
+                return lstNumReporte;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        public bool ExisteArchivosTraveler(string OrdenTrabajo, string rutaTraveler)
         {
             bool existe = false;
             try
             {
-                string rutaTraveler = ConfigurationManager.AppSettings["RutaTraveler"].ToString();
+                //string rutaTraveler = ConfigurationManager.AppSettings["RutaTraveler"].ToString();
                 string UsuarioTraveler  = ConfigurationManager.AppSettings["UsuarioTraveler"].ToString();
                 string PassTraveler = ConfigurationManager.AppSettings["PassTraveler"].ToString();
                 string traveler = Path.Combine(rutaTraveler, "ODT " + OrdenTrabajo + ".pdf");
-                using (new NetworkConnection(rutaTraveler, new NetworkCredential(UsuarioTraveler, PassTraveler)))
-                {
-                    if (File.Exists(traveler))
+                //using (new NetworkConnection(rutaTraveler, new NetworkCredential(UsuarioTraveler, PassTraveler)))
+                //{
+                if (File.Exists(traveler))
                 {
                         existe = true;
                 }
@@ -211,7 +284,7 @@ namespace PDFReportes.Utilidades
                 {
                     EscribirEnCSV(OrdenTrabajo, "Traveler", "No se encontro archivo Traveler");
                 }
-                }
+                //}
                 return existe;
             }
             catch (Exception e)
@@ -219,55 +292,68 @@ namespace PDFReportes.Utilidades
                 return false;
             }
         }
-        public int getCantidadPaginas(string OrdenTrabajo)
+        public int getCantidadPaginas(string OrdenTrabajo, string RutaTraveler)
         {
-            string ruta = Path.Combine(ConfigurationManager.AppSettings["RutaTraveler"].ToString(), "ODT " + OrdenTrabajo + ".pdf");
+            //string ruta = Path.Combine(ConfigurationManager.AppSettings["RutaTraveler"].ToString(), "ODT " + OrdenTrabajo + ".pdf");
+            string ruta = Path.Combine(RutaTraveler, "ODT " + OrdenTrabajo + ".pdf");
             using (PdfReader reader = new PdfReader(ruta))
             {
                 return reader.NumberOfPages;
             }
         }
 
-        //TRAVELERS
-        public void TravelerXSpool(string OrdenTrabajo, string NumeroControl, int NumPagina, string NumeroEmbarque)
+        //TRAVELERS        
+        public void TravelerXSpool(Spool Spool, string RutaTraveler)
         {            
             try
             {
                 PdfReader reader = null;
                 PdfCopy copia = null;
-                Document doc = new Document();
-                string RutaTraveler = ConfigurationManager.AppSettings["RutaTraveler"].ToString();                
+                Document doc = new Document();                
                 string rutaDestino = Path.GetTempPath();                
-                if (ExisteArchivosTraveler(OrdenTrabajo))
-                {
-                    NumPagina = getCantidadPaginas(OrdenTrabajo) - NumPagina;
-                    reader = new PdfReader(Path.Combine(RutaTraveler, "ODT " + OrdenTrabajo + ".pdf"));
-                    if(reader != null)
+                if (ExisteArchivosTraveler(Spool.OrdenTrabajo, RutaTraveler))
+                {                    
+                    Spool.NumeroPaginas = getCantidadPaginas(Spool.OrdenTrabajo, RutaTraveler) - Spool.NumeroPaginas; //VERIFICAR SI EL ARCHIVO DE TRAVELER NO TRAE MENOS HOJAS Y SI ES NEGATIVO                    
+                    if(Spool.NumeroPaginas > 0)
                     {
-                        
-                        if(reader.NumberOfPages >= NumPagina)
+                        if (!Spool.AplicaGranel)
                         {
-                            copia = new PdfCopy(doc, new FileStream(rutaDestino + "\\" + NumeroControl + "_Traveler.pdf", FileMode.Create));
-                            doc.Open();
-                            copia.AddPage(copia.GetImportedPage(reader, NumPagina));
-                            copia.Close();
-                            doc.Close();
+                            reader = new PdfReader(Path.Combine(RutaTraveler, "ODT " + Spool.OrdenTrabajo + ".pdf"));
+                            if (reader != null)
+                            {                                
+                                if (reader.NumberOfPages >= Spool.NumeroPaginas)
+                                {
+                                    copia = new PdfCopy(doc, new FileStream(rutaDestino + "\\" + Spool.NumeroControl + "_Traveler.pdf", FileMode.Create));
+                                    doc.Open();
+                                    copia.AddPage(copia.GetImportedPage(reader, Spool.NumeroPaginas));
+                                    copia.Close();
+                                    doc.Close();
+                                }
+                                else
+                                {
+                                    EscribirEnCSV(Spool.NumeroControl, "Traveler", "No coinciden los numeros de pagina");
+                                }
+                            }
+                            else
+                            {
+                                EscribirEnCSV(Spool.NumeroControl, "Traveler", "No se encontro traveler");
+                            }
+                            if (reader != null)
+                                reader.Close();
                         }
                         else
                         {
-                            EscribirEnCSV(NumeroControl, "Traveler", "No coinciden los numeros de pagina");
+                            EscribirEnCSV(Spool.NumeroControl, "Traveler", "Es Granel");
                         }                        
                     }
                     else
                     {
-                        EscribirEnCSV(NumeroControl, "Traveler", "No se encontro traveler");
-                    }
-                    if (reader != null)
-                        reader.Close();
+                        EscribirEnCSV(Spool.NumeroControl, "Traveler", "Probablemente el archivo este dañado o es granel");
+                    }                    
                 }
                 else
                 {
-                    EscribirEnCSV(OrdenTrabajo, "Traveler", "No se encontro archivo principal traveler");
+                    EscribirEnCSV(Spool.OrdenTrabajo, "Traveler", "No se encontro archivo principal traveler");
                 }                
             }
             catch (Exception e)
@@ -276,20 +362,21 @@ namespace PDFReportes.Utilidades
             }            
         }
         //CERTIFICADOS
-        public void CertificadoXSpool(string NumeroControl, string NumeroEmbarque)
+        public void CertificadoXSpool(string NumeroControl, string RutaReportes)
         {
             try
             {
                 PdfReader reader = null;
                 PdfCopy copia = null;
-                Document doc = new Document();
-                string rutaCertificado = ConfigurationManager.AppSettings["RutaCertificados"].ToString();
+                Document doc = new Document();                
+                string carpetaCertificados = ConfigurationManager.AppSettings["CarpetaCertificadoSpool"].ToString();                
+                RutaReportes = String.Concat(RutaReportes, carpetaCertificados);
                 string rutaTemp = Path.GetTempPath();
-                if (Directory.Exists(rutaCertificado))
+                if (Directory.Exists(RutaReportes))
                 {
-                    if(File.Exists(Path.Combine(rutaCertificado, NumeroControl + ".pdf")))
+                    if(File.Exists(Path.Combine(RutaReportes, NumeroControl + ".pdf")))
                     {
-                        reader = new PdfReader(Path.Combine(rutaCertificado, NumeroControl + ".pdf"));
+                        reader = new PdfReader(Path.Combine(RutaReportes, NumeroControl + ".pdf"));
                         if(reader != null)
                         {                            
                             if(reader.NumberOfPages >= 1)
@@ -332,13 +419,13 @@ namespace PDFReportes.Utilidades
             }
         }
         //PND'S
-        public void RTPOST_X_Spool(string NumeroControl, string NumeroEmbarque)
+        public void RTPOST_X_Spool(int ProyectoID, string NumeroControl, string RutaReportes)
         {
             try
             {
-                List<ReportePND> Lista = ObtenerReportesPND_PorNumeroControl(NumeroControl, 5);
-                string rutaPND = ConfigurationManager.AppSettings["RutaPND"].ToString();
-                string rutaRTPOST = rutaPND + "\\RTPostTT";               
+                List<ReporteTT_PND> Lista = ObtenerReportesPND_PorNumeroControl(ProyectoID, NumeroControl, 5);
+                string carpetaRTPOST = ConfigurationManager.AppSettings["CarpetaRTPost"].ToString();                
+                string rutaRTPOST = String.Concat(RutaReportes, carpetaRTPOST);
                 string rutaTemp = Path.GetTempPath();
                 if (Directory.Exists(rutaRTPOST))
                 {
@@ -381,20 +468,20 @@ namespace PDFReportes.Utilidades
                                 EscribirEnCSV(NumeroControl, "Reporte RTPOST", "No se encontro Reporte");
                             }
                         }
-                        //Mezclar reportes por spool
-                        List<string> listaRTPOST = new List<string>();
-                        foreach (var item in Lista)
-                        {
-                            if(File.Exists(rutaTemp + "\\" + item.NumeroReporte + "_RTPOST.pdf"))
-                            {
-                                listaRTPOST.Add(rutaTemp + "\\" + item.NumeroReporte + "_RTPOST.pdf");
-                            }                           
-                        }
-                        if(listaRTPOST != null && listaRTPOST.Count > 0)
-                        {
-                            MergePDF(listaRTPOST, rutaTemp + "\\" + NumeroControl + "_RTPOST.pdf");
-                            eliminarArchivosPND(listaRTPOST);
-                        }                        
+                        ////Mezclar reportes por spool
+                        //List<string> listaRTPOST = new List<string>();
+                        //foreach (var item in Lista)
+                        //{
+                        //    if(File.Exists(rutaTemp + "\\" + item.NumeroReporte + "_RTPOST.pdf"))
+                        //    {
+                        //        listaRTPOST.Add(rutaTemp + "\\" + item.NumeroReporte + "_RTPOST.pdf");
+                        //    }                           
+                        //}
+                        //if(listaRTPOST != null && listaRTPOST.Count > 0)
+                        //{
+                        //    MergePDF(listaRTPOST, rutaTemp + "\\" + NumeroControl + "_RTPOST.pdf");
+                        //    eliminarArchivosPND(listaRTPOST);
+                        //}                        
                     }
                     else
                     {
@@ -412,13 +499,13 @@ namespace PDFReportes.Utilidades
                 EscribirEnCSV(NumeroControl, "Reporte RTPOST", "Error Obteniendo Numeros de Reporte: " + e.Message);
             }
         }
-        public void PTPOST_X_Spool(string NumeroControl, string NumeroEmbarque)
+        public void PTPOST_X_Spool(int ProyectoID, string NumeroControl, string RutaReportes)
         {
             try
             {
-                List<ReportePND> Lista = ObtenerReportesPND_PorNumeroControl(NumeroControl, 6);
-                string rutaPND = ConfigurationManager.AppSettings["RutaPND"].ToString();
-                string rutaPTPOST = rutaPND + "\\PTPostTT";
+                List<ReporteTT_PND> Lista = ObtenerReportesPND_PorNumeroControl(ProyectoID, NumeroControl, 6);
+                string carpetaPTPOST = ConfigurationManager.AppSettings["CarpetaPTPost"].ToString();
+                string rutaPTPOST = String.Concat(RutaReportes, carpetaPTPOST);            
                 string rutaTemp = Path.GetTempPath();
                 if (Directory.Exists(rutaPTPOST))
                 {
@@ -492,13 +579,13 @@ namespace PDFReportes.Utilidades
                 EscribirEnCSV(NumeroControl, "Reporte PTPOST", "Error Obteniendo Numeros de Reporte: " + e.Message);
             }
         }
-        public void UTPOST_X_Spool(string NumeroControl, string NumeroEmbarque)
+        public void UTPOST_X_Spool(int ProyectoID, string NumeroControl, string RutaReportes)
         {
             try
             {
-                List<ReportePND> Lista = ObtenerReportesPND_PorNumeroControl(NumeroControl, 14);
-                string rutaPND = ConfigurationManager.AppSettings["RutaPND"].ToString();
-                string rutaUTPOST = rutaPND + "\\UTPostTT";
+                List<ReporteTT_PND> Lista = ObtenerReportesPND_PorNumeroControl(ProyectoID, NumeroControl, 14);
+                string carpetaUTPOST = ConfigurationManager.AppSettings["CarpetaUTPost"].ToString();
+                string rutaUTPOST = String.Concat(RutaReportes, carpetaUTPOST);
                 string rutaTemp = Path.GetTempPath();
                 if (Directory.Exists(rutaUTPOST))
                 {
@@ -572,13 +659,14 @@ namespace PDFReportes.Utilidades
                 EscribirEnCSV(NumeroControl, "Reporte UTPOST", "Error Obteniendo Numeros de Reporte: " + e.Message);
             }
         }
-        public void RT_X_Spool(string NumeroControl, string NumeroEmbarque)
+        
+        public void RT_X_Spool(int ProyectoID, string NumeroControl, string RutaReportes)
         {
             try
             {
-                List<ReportePND> Lista = ObtenerReportesPND_PorNumeroControl(NumeroControl, 1);
-                string rutaPND = ConfigurationManager.AppSettings["RutaPND"].ToString();
-                string rutaRT = rutaPND + "\\RT";
+                List<ReporteTT_PND> Lista = ObtenerReportesPND_PorNumeroControl(ProyectoID, NumeroControl, 1);
+                string carpetaRT = ConfigurationManager.AppSettings["CarpetaRT"].ToString();
+                string rutaRT = String.Concat(RutaReportes, carpetaRT);
                 string rutaTemp = Path.GetTempPath();
                 if (Directory.Exists(rutaRT))
                 {
@@ -652,13 +740,13 @@ namespace PDFReportes.Utilidades
                 EscribirEnCSV(NumeroControl, "Reporte RT", "Error Obteniendo Numeros de Reporte: " + e.Message);
             }
         }
-        public void PT_X_Spool(string NumeroControl, string NumeroEmbarque)
+        public void PT_X_Spool(int ProyectoID, string NumeroControl, string RutaReportes)
         {
             try
             {
-                List<ReportePND> Lista = ObtenerReportesPND_PorNumeroControl(NumeroControl, 2);
-                string rutaPND = ConfigurationManager.AppSettings["RutaPND"].ToString();
-                string rutaPT = rutaPND + "\\PT";
+                List<ReporteTT_PND> Lista = ObtenerReportesPND_PorNumeroControl(ProyectoID, NumeroControl, 2);
+                string carpetaPT = ConfigurationManager.AppSettings["CarpetaPT"].ToString();
+                string rutaPT = String.Concat(RutaReportes, carpetaPT);
                 string rutaTemp = Path.GetTempPath();
                 if (Directory.Exists(rutaPT))
                 {
@@ -732,13 +820,13 @@ namespace PDFReportes.Utilidades
                 EscribirEnCSV(NumeroControl, "Reporte PT", "Error Obteniendo Numeros de Reporte: " + e.Message);
             }
         }
-        public void UT_X_Spool(string NumeroControl, string NumeroEmbarque)
+        public void UT_X_Spool(int ProyectoID, string NumeroControl, string RutaReportes)
         {
             try
             {
-                List<ReportePND> Lista = ObtenerReportesPND_PorNumeroControl(NumeroControl, 8);
-                string rutaPND = ConfigurationManager.AppSettings["RutaPND"].ToString();
-                string rutaUT = rutaPND + "\\UT";
+                List<ReporteTT_PND> Lista = ObtenerReportesPND_PorNumeroControl(ProyectoID, NumeroControl, 8);
+                string carpetaUT = ConfigurationManager.AppSettings["CarpetaUT"].ToString();
+                string rutaUT = String.Concat(RutaReportes, carpetaUT);
                 string rutaTemp = Path.GetTempPath();
                 if (Directory.Exists(rutaUT))
                 {
@@ -812,13 +900,13 @@ namespace PDFReportes.Utilidades
                 EscribirEnCSV(NumeroControl, "Reporte UT", "Error Obteniendo Numeros de Reporte: " + e.Message);
             }
         }
-        public void PMI_X_Spool(string NumeroControl, string NumeroEmbarque)
+        public void PMI_X_Spool(int ProyectoID, string NumeroControl, string RutaReportes)
         {
             try
             {
-                List<ReportePND> Lista = ObtenerReportesPND_PorNumeroControl(NumeroControl, 10);
-                string rutaPND = ConfigurationManager.AppSettings["RutaPND"].ToString();
-                string rutaPMI = rutaPND + "\\PMI";
+                List<ReporteTT_PND> Lista = ObtenerReportesPND_PorNumeroControl(ProyectoID, NumeroControl, 10);
+                string carpetaPMI = ConfigurationManager.AppSettings["CarpetaPMI"].ToString();
+                string rutaPMI = String.Concat(RutaReportes, carpetaPMI);
                 string rutaTemp = Path.GetTempPath();
                 if (Directory.Exists(rutaPMI))
                 {
@@ -892,14 +980,94 @@ namespace PDFReportes.Utilidades
                 EscribirEnCSV(NumeroControl, "Reporte PMI", "Error Obteniendo Numeros de Reporte: " + e.Message);
             }
         }
-        //PWHT
-        public void PWHT_X_Spool(string NumeroControl, string NumeroEmbarque)
+        public void Ferrita_X_Spool(int ProyectoID, string NumeroControl, string RutaReportes)
         {
             try
             {
-                List<ReportePWHT> Lista = ObtenerReportePWHT_PorNumeroControl(NumeroControl);
-                string rutaPND = ConfigurationManager.AppSettings["RutaPND"].ToString();
-                string rutaPWHT = rutaPND + "\\PWHT";
+                List<ReporteTT_PND> Lista = ObtenerReportesPND_PorNumeroControl(ProyectoID, NumeroControl, 15);
+                string carpetaFerrita = ConfigurationManager.AppSettings["CarpetaFerrita"].ToString();
+                string rutaFerrita = String.Concat(RutaReportes, carpetaFerrita);
+                string rutaTemp = Path.GetTempPath();
+                if (Directory.Exists(rutaFerrita))
+                {
+                    if (Lista != null && Lista.Count > 0)
+                    {
+                        foreach (var item in Lista)
+                        {
+                            if (File.Exists(Path.Combine(rutaFerrita, item.NumeroReporte + ".pdf")))
+                            {
+                                PdfCopy copia = null;
+                                PdfReader reader = null;
+                                Document doc = new Document();
+                                reader = new PdfReader(Path.Combine(rutaFerrita, item.NumeroReporte + ".pdf"));
+                                if (reader != null)
+                                {
+                                    if (reader.NumberOfPages > 0)
+                                    {
+                                        copia = new PdfCopy(doc, new FileStream(rutaTemp + "\\" + item.NumeroReporte + "_Ferrita.pdf", FileMode.Create));
+                                        doc.Open();
+                                        for (int i = 1; i <= reader.NumberOfPages; i++)
+                                        {
+                                            copia.AddPage(copia.GetImportedPage(reader, i));
+                                        }
+                                        copia.Close();
+                                        doc.Close();
+                                    }
+                                    else
+                                    {
+                                        EscribirEnCSV(NumeroControl, "Reporte Ferritas", "Paginas no encontradas");
+                                    }
+                                }
+                                else
+                                {
+                                    EscribirEnCSV(NumeroControl, "Reporte Ferritas", "Paginas no encontradas");
+                                }
+                                reader.Close();
+                            }
+                            else
+                            {
+                                EscribirEnCSV(NumeroControl, "Reporte Ferritas", "No se encontro Reporte");
+                            }
+                        }
+                        //Mezclar reportes por spool
+                        List<string> listaFerrita = new List<string>();
+                        foreach (var item in Lista)
+                        {
+                            if (File.Exists(rutaTemp + "\\" + item.NumeroReporte + "_Ferrita.pdf"))
+                            {
+                                listaFerrita.Add(rutaTemp + "\\" + item.NumeroReporte + "_Ferrita.pdf");
+                            }
+                        }
+                        if (listaFerrita != null && listaFerrita.Count > 0)
+                        {
+                            MergePDF(listaFerrita, rutaTemp + "\\" + NumeroControl + "_Ferrita.pdf");
+                            eliminarArchivosPND(listaFerrita);
+                        }
+                    }
+                    else
+                    {
+                        EscribirEnCSV(NumeroControl, "Reporte Ferritas", "No se encontro ningun Reporte");
+                    }
+                }
+                else
+                {
+                    EscribirEnCSV(NumeroControl, "Reporte Ferritas", "No se Encontro carpeta de reportes");
+                }
+
+            }
+            catch (Exception e)
+            {
+                EscribirEnCSV(NumeroControl, "Reporte Ferritas", "Error Obteniendo Numeros de Reporte: " + e.Message);
+            }
+        }
+        //REPORTES TT
+        public void PWHT_X_Spool(int ProyectoID, string NumeroControl, string RutaReportes)
+        {
+            try
+            {                
+                List<ReporteTT_PND> Lista = ObtenerReportesTT_PorNumeroControl(ProyectoID, NumeroControl, 3); //REPORTES TT
+                string carpetaPWHT = ConfigurationManager.AppSettings["CarpetaPWHT"].ToString();
+                string rutaPWHT = String.Concat(RutaReportes, carpetaPWHT);
                 string rutaTemp = Path.GetTempPath();
                 if (Directory.Exists(rutaPWHT))
                 {
@@ -973,14 +1141,178 @@ namespace PDFReportes.Utilidades
                 EscribirEnCSV(NumeroControl, "Reporte PWHT", "Error Obteniendo Numeros de Reporte: " + e.Message);
             }
         }
-        //PINTURA
-        public void SandBlast_X_Spool(string NumeroControl, string NumeroEmbarque)
+
+        public void HTPOST_X_Spool(int ProyectoID, string NumeroControl, string RutaReportes)
         {
             try
             {
-                List<ReportePintura> Lista = ObtenerReportePintura_PorNumeroControl(NumeroControl, 1);
-                string rutaPintura = ConfigurationManager.AppSettings["RutaPintura"].ToString();
-                string rutaSanBlast = rutaPintura + "\\Sandblast";
+                List<ReporteTT_PND> Lista = ObtenerReportesTT_PorNumeroControl(ProyectoID, NumeroControl, 16);
+                string carpetaHTPOST = ConfigurationManager.AppSettings["CarpetaHTPOST"].ToString();
+                string rutaHTPOST = String.Concat(RutaReportes, carpetaHTPOST);
+                string rutaTemp = Path.GetTempPath();
+                if (Directory.Exists(rutaHTPOST))
+                {
+                    if (Lista != null && Lista.Count > 0)
+                    {
+                        foreach (var item in Lista)
+                        {
+                            if (File.Exists(Path.Combine(rutaHTPOST, item.NumeroReporte + ".pdf")))
+                            {
+                                PdfCopy copia = null;
+                                PdfReader reader = null;
+                                Document doc = new Document();
+                                reader = new PdfReader(Path.Combine(rutaHTPOST, item.NumeroReporte + ".pdf"));
+                                if (reader != null)
+                                {
+                                    if (reader.NumberOfPages > 0)
+                                    {
+                                        copia = new PdfCopy(doc, new FileStream(rutaTemp + "\\" + item.NumeroReporte + "_HTPOST.pdf", FileMode.Create));
+                                        doc.Open();
+                                        for (int i = 1; i <= reader.NumberOfPages; i++)
+                                        {
+                                            copia.AddPage(copia.GetImportedPage(reader, i));
+                                        }
+                                        copia.Close();
+                                        doc.Close();
+                                    }
+                                    else
+                                    {
+                                        EscribirEnCSV(NumeroControl, "Reporte HTPOST", "Paginas no encontradas");
+                                    }
+                                }
+                                else
+                                {
+                                    EscribirEnCSV(NumeroControl, "Reporte HTPOST", "Paginas no encontradas");
+                                }
+                                reader.Close();
+                            }
+                            else
+                            {
+                                EscribirEnCSV(NumeroControl, "Reporte HTPOST", "No se encontro Reporte");
+                            }
+                        }
+                        //Mezclar reportes por spool
+                        List<string> listaHTPOST = new List<string>();
+                        foreach (var item in Lista)
+                        {
+                            if (File.Exists(rutaTemp + "\\" + item.NumeroReporte + "_HTPOST.pdf"))
+                            {
+                                listaHTPOST.Add(rutaTemp + "\\" + item.NumeroReporte + "_HTPOST.pdf");
+                            }
+                        }
+                        if (listaHTPOST != null && listaHTPOST.Count > 0)
+                        {
+                            MergePDF(listaHTPOST, rutaTemp + "\\" + NumeroControl + "_HTPOST.pdf");
+                            eliminarArchivosPND(listaHTPOST);
+                        }
+                    }
+                    else
+                    {
+                        EscribirEnCSV(NumeroControl, "Reporte HTPOST", "No se encontro ningun Reporte");
+                    }
+                }
+                else
+                {
+                    EscribirEnCSV(NumeroControl, "Reporte HTPOST", "No se Encontro carpeta de reportes");
+                }
+
+            }
+            catch (Exception e)
+            {
+                EscribirEnCSV(NumeroControl, "Reporte HTPOST", "Error Obteniendo Numeros de Reporte: " + e.Message);
+            }
+        }
+
+        public void Durezas_X_Spool(int ProyectoID, string NumeroControl, string RutaReportes)
+        {
+            try
+            {
+                List<ReporteTT_PND> Lista = ObtenerReportesTT_PorNumeroControl(ProyectoID, NumeroControl, 16);
+                string carpetaDurezas = ConfigurationManager.AppSettings["CarpetaDurezas"].ToString();
+                string rutaDurezas = String.Concat(RutaReportes, carpetaDurezas);
+                string rutaTemp = Path.GetTempPath();
+                if (Directory.Exists(rutaDurezas))
+                {
+                    if (Lista != null && Lista.Count > 0)
+                    {
+                        foreach (var item in Lista)
+                        {
+                            if (File.Exists(Path.Combine(rutaDurezas, item.NumeroReporte + ".pdf")))
+                            {
+                                PdfCopy copia = null;
+                                PdfReader reader = null;
+                                Document doc = new Document();
+                                reader = new PdfReader(Path.Combine(rutaDurezas, item.NumeroReporte + ".pdf"));
+                                if (reader != null)
+                                {
+                                    if (reader.NumberOfPages > 0)
+                                    {
+                                        copia = new PdfCopy(doc, new FileStream(rutaTemp + "\\" + item.NumeroReporte + "_Durezas.pdf", FileMode.Create));
+                                        doc.Open();
+                                        for (int i = 1; i <= reader.NumberOfPages; i++)
+                                        {
+                                            copia.AddPage(copia.GetImportedPage(reader, i));
+                                        }
+                                        copia.Close();
+                                        doc.Close();
+                                    }
+                                    else
+                                    {
+                                        EscribirEnCSV(NumeroControl, "Reporte Durezas", "Paginas no encontradas");
+                                    }
+                                }
+                                else
+                                {
+                                    EscribirEnCSV(NumeroControl, "Reporte Durezas", "Paginas no encontradas");
+                                }
+                                reader.Close();
+                            }
+                            else
+                            {
+                                EscribirEnCSV(NumeroControl, "Reporte Durezas", "No se encontro Reporte");
+                            }
+                        }
+                        //Mezclar reportes por spool
+                        List<string> listaDurezas = new List<string>();
+                        foreach (var item in Lista)
+                        {
+                            if (File.Exists(rutaTemp + "\\" + item.NumeroReporte + "_Durezas.pdf"))
+                            {
+                                listaDurezas.Add(rutaTemp + "\\" + item.NumeroReporte + "_Durezas.pdf");
+                            }
+                        }
+                        if (listaDurezas != null && listaDurezas.Count > 0)
+                        {
+                            MergePDF(listaDurezas, rutaTemp + "\\" + NumeroControl + "_Durezas.pdf");
+                            eliminarArchivosPND(listaDurezas);
+                        }
+                    }
+                    else
+                    {
+                        EscribirEnCSV(NumeroControl, "Reporte Durezas", "No se encontro ningun Reporte");
+                    }
+                }
+                else
+                {
+                    EscribirEnCSV(NumeroControl, "Reporte Durezas", "No se Encontro carpeta de reportes");
+                }
+
+            }
+            catch (Exception e)
+            {
+                EscribirEnCSV(NumeroControl, "Reporte Durezas", "Error Obteniendo Numeros de Reporte: " + e.Message);
+            }
+        }
+
+
+        //PINTURA
+        public void SandBlast_X_Spool(int ProyectoID, string NumeroControl, string RutaReportes)
+        {
+            try
+            {
+                List<ReportePintura> Lista = ObtenerReportePintura_PorNumeroControl(ProyectoID, NumeroControl, 1);
+                string carpetaSandblast = ConfigurationManager.AppSettings["CarpetaSandblast"].ToString();
+                string rutaSanBlast = String.Concat(RutaReportes, carpetaSandblast);
                 string rutaTemp = Path.GetTempPath();
                 if (Directory.Exists(rutaSanBlast))
                 {
@@ -1027,16 +1359,16 @@ namespace PDFReportes.Utilidades
                         List<string> listaSandBlast = new List<string>();
                         foreach (var item in Lista)
                         {
-                            if(File.Exists(rutaTemp + "\\" + item.NumeroReporte + "_SandBlast.pdf"))
+                            if (File.Exists(rutaTemp + "\\" + item.NumeroReporte + "_SandBlast.pdf"))
                             {
                                 listaSandBlast.Add(rutaTemp + "\\" + item.NumeroReporte + "_SandBlast.pdf");
-                            }                            
+                            }
                         }
-                        if(listaSandBlast != null && listaSandBlast.Count > 0)
+                        if (listaSandBlast != null && listaSandBlast.Count > 0)
                         {
                             MergePDF(listaSandBlast, rutaTemp + "\\" + NumeroControl + "_SandBlast.pdf");
                             eliminarArchivosPND(listaSandBlast);
-                        }                        
+                        }
                     }
                     else
                     {
@@ -1054,13 +1386,13 @@ namespace PDFReportes.Utilidades
                 EscribirEnCSV(NumeroControl, "Reporte SandBlast", "Error Obteniendo Numeros de Reporte: " + e.Message);
             }
         }
-        public void Primario_X_Spool(string NumeroControl, string NumeroEmbarque)
+        public void Primario_X_Spool(int ProyectoID, string NumeroControl, string RutaReportes)
         {
             try
             {
-                List<ReportePintura> Lista = ObtenerReportePintura_PorNumeroControl(NumeroControl, 2);
-                string rutaPintura = ConfigurationManager.AppSettings["RutaPintura"].ToString();
-                string rutaPrimario = rutaPintura + "\\Primarios";
+                List<ReportePintura> Lista = ObtenerReportePintura_PorNumeroControl(ProyectoID, NumeroControl, 2);
+                string carpetaPrimarios = ConfigurationManager.AppSettings["CarpetaPrimarios"].ToString();
+                string rutaPrimario = String.Concat(RutaReportes, carpetaPrimarios);
                 string rutaTemp = Path.GetTempPath();
                 if (Directory.Exists(rutaPrimario))
                 {
@@ -1134,13 +1466,13 @@ namespace PDFReportes.Utilidades
                 EscribirEnCSV(NumeroControl, "Reporte Primarios", "Error Obteniendo Numeros de Reporte: " + e.Message);
             }
         }
-        public void Intermedio_X_Spool(string NumeroControl, string NumeroEmbarque)
+        public void Intermedio_X_Spool(int ProyectoID, string NumeroControl,string RutaReportes)
         {
             try
             {
-                List<ReportePintura> Lista = ObtenerReportePintura_PorNumeroControl(NumeroControl, 3);
-                string rutaPintura = ConfigurationManager.AppSettings["RutaPintura"].ToString();
-                string rutaIntermedios = rutaPintura + "\\Intermedios";
+                List<ReportePintura> Lista = ObtenerReportePintura_PorNumeroControl(ProyectoID, NumeroControl, 3);
+                string carpetaIntermedios = ConfigurationManager.AppSettings["CarpetaIntermedios"].ToString();
+                string rutaIntermedios = String.Concat(RutaReportes, carpetaIntermedios);
                 string rutaTemp = Path.GetTempPath();
                 if (Directory.Exists(rutaIntermedios))
                 {
@@ -1214,13 +1546,13 @@ namespace PDFReportes.Utilidades
                 EscribirEnCSV(NumeroControl, "Reporte Intermedios", "Error Obteniendo Numeros de Reporte: " + e.Message);
             }
         }
-        public void Acabado_X_Spool(string NumeroControl, string NumeroEmbarque)
+        public void Acabado_X_Spool(int ProyectoID, string NumeroControl, string RutaReportes)
         {
             try
             {
-                List<ReportePintura> Lista = ObtenerReportePintura_PorNumeroControl(NumeroControl, 4);
-                string rutaPintura = ConfigurationManager.AppSettings["RutaPintura"].ToString();
-                string rutaAcabado = rutaPintura + "\\AcabadoVisual";
+                List<ReportePintura> Lista = ObtenerReportePintura_PorNumeroControl(ProyectoID, NumeroControl, 4);
+                string carpetaAcabado = ConfigurationManager.AppSettings["CarpetaAcabado"].ToString();
+                string rutaAcabado = String.Concat(RutaReportes, carpetaAcabado);
                 string rutaTemp = Path.GetTempPath();
                 if (Directory.Exists(rutaAcabado))
                 {
@@ -1294,13 +1626,13 @@ namespace PDFReportes.Utilidades
                 EscribirEnCSV(NumeroControl, "Reporte Acabado Visual", "Error Obteniendo Numeros de Reporte: " + e.Message);
             }
         }
-        public void Adherencia_X_Spool(string NumeroControl, string NumeroEmbarque)
+        public void Adherencia_X_Spool(int ProyectoID, string NumeroControl, string RutaReportes)
         {
             try
             {
-                List<ReportePintura> Lista = ObtenerReportePintura_PorNumeroControl(NumeroControl, 5);
-                string rutaPintura = ConfigurationManager.AppSettings["RutaPintura"].ToString();
-                string rutaAdherencia = rutaPintura + "\\Adherencia";
+                List<ReportePintura> Lista = ObtenerReportePintura_PorNumeroControl(ProyectoID, NumeroControl, 5);
+                string carpetaAdherencia = ConfigurationManager.AppSettings["CarpetaAdherencia"].ToString();
+                string rutaAdherencia = String.Concat(RutaReportes, carpetaAdherencia);
                 string rutaTemp = Path.GetTempPath();
                 if (Directory.Exists(rutaAdherencia))
                 {
@@ -1374,137 +1706,399 @@ namespace PDFReportes.Utilidades
                 EscribirEnCSV(NumeroControl, "Reporte Adherencia", "Error Obteniendo Numeros de Reporte: " + e.Message);
             }
         }
-        public void PullOf_Holiday_X_Spool(string NumeroControl, string NumeroEmbarque)
+        //public void PullOf_X_Spool(int ProyectoID, string NumeroControl, string RutaReportes)
+        //{
+        //    try
+        //    {
+        //        List<ReportePintura> ListaPullOf = ObtenerReportePintura_PorNumeroControl(ProyectoID, NumeroControl, 6); //pullOf                
+        //        string carpetaPullOf = ConfigurationManager.AppSettings["CarpetaPullOf"].ToString();                
+        //        string rutaPullof = String.Concat(RutaReportes, carpetaPullOf);                
+        //        string rutaTemp = Path.GetTempPath();
+        //        if (Directory.Exists(rutaPullof))
+        //        {
+        //            if (ListaPullOf != null && ListaPullOf.Count > 0)
+        //            {
+        //                foreach (var item in ListaPullOf)
+        //                {
+        //                    if (File.Exists(Path.Combine(rutaPullof, item.NumeroReporte + ".pdf")))
+        //                    {
+        //                        PdfCopy copia = null;
+        //                        PdfReader reader = null;
+        //                        Document doc = new Document();
+        //                        reader = new PdfReader(Path.Combine(rutaPullof, item.NumeroReporte + ".pdf"));
+        //                        if (reader != null)
+        //                        {
+        //                            if (reader.NumberOfPages > 0)
+        //                            {
+        //                                copia = new PdfCopy(doc, new FileStream(rutaTemp + "\\" + item.NumeroReporte + "_PullOf.pdf", FileMode.Create));
+        //                                doc.Open();
+        //                                for (int i = 1; i <= reader.NumberOfPages; i++)
+        //                                {
+        //                                    copia.AddPage(copia.GetImportedPage(reader, i));
+        //                                }
+        //                                copia.Close();
+        //                                doc.Close();
+        //                            }
+        //                            else
+        //                            {
+        //                                EscribirEnCSV(NumeroControl, "Reporte PullOf", "Paginas no encontradas");
+        //                            }
+        //                        }
+        //                        else
+        //                        {
+        //                            EscribirEnCSV(NumeroControl, "Reporte PullOf", "Paginas no encontradas");
+        //                        }
+        //                        reader.Close();
+        //                    }                            
+        //                    else
+        //                    {
+        //                        EscribirEnCSV(NumeroControl, "Reporte PullOf", "No se encontro Reporte");                                
+        //                    }
+        //                }
+        //                //Mezclar reportes por spool PullOF
+        //                List<string> listaPullOf1 = new List<string>();
+        //                foreach (var item in ListaPullOf)
+        //                {
+        //                    if(File.Exists(rutaTemp + "\\" + item.NumeroReporte + "_PullOf.pdf"))
+        //                    {
+        //                        listaPullOf1.Add(rutaTemp + "\\" + item.NumeroReporte + "_PullOf.pdf");
+        //                    }                            
+        //                }
+        //                if(listaPullOf1 != null && listaPullOf1.Count > 0)
+        //                {
+        //                    MergePDF(listaPullOf1, rutaTemp + "\\" + NumeroControl + "_PullOf.pdf");
+        //                    eliminarArchivosPND(listaPullOf1);
+        //                }                                                
+        //            }
+        //            else
+        //            {
+        //                EscribirEnCSV(NumeroControl, "Reporte PullOf", "No se encontro ningun Reporte");                        
+        //            }
+        //        }
+        //        else
+        //        {
+        //            EscribirEnCSV(NumeroControl, "Reporte PullOf", "No se Encontro carpeta de reportes");                    
+        //        }
+
+        //    }
+        //    catch (Exception e)
+        //    {
+        //        EscribirEnCSV(NumeroControl, "Reporte PullOf", "Error Obteniendo Numeros de Reporte: " + e.Message);                
+        //    }
+        //}
+        //public void Holiday_X_Spool(int ProyectoID, string NumeroControl, string RutaReportes)
+        //{
+        //    try
+        //    {                
+        //        List<ReportePintura> ListaHoliday = ObtenerReportePintura_PorNumeroControl(ProyectoID, NumeroControl, 7); //Holiday                
+        //        string carpetaHoliday = ConfigurationManager.AppSettings["CarpetaHoliday"].ToString();                
+        //        string rutaHoliday = String.Concat(RutaReportes, carpetaHoliday);
+        //        string rutaTemp = Path.GetTempPath();
+        //        if (Directory.Exists(rutaHoliday))
+        //        {
+        //            if (ListaHoliday != null && ListaHoliday.Count > 0)
+        //            {
+        //                foreach (var item in ListaHoliday)
+        //                {                            
+        //                    if (File.Exists(Path.Combine(rutaHoliday, item.NumeroReporte + ".pdf")))
+        //                    {
+        //                        PdfCopy copia = null;
+        //                        PdfReader reader = null;
+        //                        Document doc = new Document();
+        //                        reader = new PdfReader(Path.Combine(rutaHoliday, item.NumeroReporte + ".pdf"));
+        //                        if (reader != null)
+        //                        {
+        //                            if (reader.NumberOfPages > 0)
+        //                            {
+        //                                copia = new PdfCopy(doc, new FileStream(rutaTemp + "\\" + item.NumeroReporte + "_Holiday.pdf", FileMode.Create));
+        //                                doc.Open();
+        //                                for (int i = 1; i <= reader.NumberOfPages; i++)
+        //                                {
+        //                                    copia.AddPage(copia.GetImportedPage(reader, i));
+        //                                }
+        //                                copia.Close();
+        //                                doc.Close();
+        //                            }
+        //                            else
+        //                            {
+        //                                EscribirEnCSV(NumeroControl, "Reporte Holiday", "Paginas no encontradas");
+        //                            }
+        //                        }
+        //                        else
+        //                        {
+        //                            EscribirEnCSV(NumeroControl, "Reporte Holiday", "Paginas no encontradas");
+        //                        }
+        //                        reader.Close();
+        //                    }
+        //                    else
+        //                    {                                
+        //                        EscribirEnCSV(NumeroControl, "Reporte Holiday", "No se encontro Reporte");
+        //                    }
+        //                }
+
+        //                //Mezclar reportes por spool Holiday
+        //                List<string> listaHoliday1 = new List<string>();
+        //                foreach (var item in ListaHoliday)
+        //                {
+        //                    if (File.Exists(rutaTemp + "\\" + item.NumeroReporte + "_Holiday.pdf"))
+        //                    {
+        //                        listaHoliday1.Add(rutaTemp + "\\" + item.NumeroReporte + "_Holiday.pdf");
+        //                    }
+        //                }
+        //                if (listaHoliday1 != null && listaHoliday1.Count > 0)
+        //                {
+        //                    MergePDF(listaHoliday1, rutaTemp + "\\" + NumeroControl + "_Holiday.pdf");
+        //                    eliminarArchivosPND(listaHoliday1);
+        //                }
+        //            }
+        //            else
+        //            {                        
+        //                EscribirEnCSV(NumeroControl, "Reporte Holiday", "No se encontro ningun Reporte");
+        //            }
+        //        }
+        //        else
+        //        {                    
+        //            EscribirEnCSV(NumeroControl, "Reporte Holiday", "No se Encontro carpeta de reportes");
+        //        }
+
+        //    }
+        //    catch (Exception e)
+        //    {                
+        //        EscribirEnCSV(NumeroControl, "Reporte Holiday", "Error Obteniendo Numeros de Reporte: " + e.Message);
+        //    }
+        //}
+        public List<string> ObtenerReportesPullOf_Holiday(int ProyectoID, DataTable NumeroControl, string RutaReportes, int Reporte, string NumeroEmbarque)
         {
             try
             {
-                List<ReportePintura> Lista = ObtenerReportePintura_PorNumeroControl(NumeroControl, 6);
-                string rutaPintura = ConfigurationManager.AppSettings["RutaPintura"].ToString();
-                string rutaPullof = rutaPintura + "\\PullOff";
-                string rutaHoliday = rutaPintura + "\\Holiday";
+                List<string> retorno = new List<string>();
+                List<NumeroReportePullHoliday> ListaNumReporte = ObtenerReportePullOf_Holiday(ProyectoID, NumeroControl, Reporte);
+                string carpetaPullOf = ConfigurationManager.AppSettings["CarpetaPullOf"].ToString();
+                string carpetaHoliday = ConfigurationManager.AppSettings["CarpetaHoliday"].ToString();
+                string rutaPullof = String.Concat(RutaReportes, carpetaPullOf);
+                string rutaHoliday = String.Concat(RutaReportes, carpetaHoliday);
                 string rutaTemp = Path.GetTempPath();
-                if (Directory.Exists(rutaPullof) && Directory.Exists(rutaHoliday))
+                if(Reporte == 1) //PULLOF
                 {
-                    if (Lista != null && Lista.Count > 0)
+                    if (Directory.Exists(rutaPullof))
                     {
-                        foreach (var item in Lista)
+                        if (ListaNumReporte != null && ListaNumReporte.Count > 0)
                         {
-                            if (File.Exists(Path.Combine(rutaPullof, item.NumeroReporte + ".pdf")))
+                            foreach (var item in ListaNumReporte)
                             {
-                                PdfCopy copia = null;
-                                PdfReader reader = null;
-                                Document doc = new Document();
-                                reader = new PdfReader(Path.Combine(rutaPullof, item.NumeroReporte + ".pdf"));
-                                if (reader != null)
+                                if (File.Exists(Path.Combine(rutaPullof, item.NumeroReporte + ".pdf")))
                                 {
-                                    if (reader.NumberOfPages > 0)
+                                    PdfCopy copia = null;
+                                    PdfReader reader = null;
+                                    Document doc = new Document();
+                                    reader = new PdfReader(Path.Combine(rutaPullof, item.NumeroReporte + ".pdf"));
+                                    if (reader != null)
                                     {
-                                        copia = new PdfCopy(doc, new FileStream(rutaTemp + "\\" + item.NumeroReporte + "_PullOf.pdf", FileMode.Create));
-                                        doc.Open();
-                                        for (int i = 1; i <= reader.NumberOfPages; i++)
+                                        if (reader.NumberOfPages > 0)
                                         {
-                                            copia.AddPage(copia.GetImportedPage(reader, i));
+                                            copia = new PdfCopy(doc, new FileStream(rutaTemp + "\\" + item.NumeroReporte + "_PullOf.pdf", FileMode.Create));
+                                            doc.Open();
+                                            for (int i = 1; i <= reader.NumberOfPages; i++)
+                                            {
+                                                copia.AddPage(copia.GetImportedPage(reader, i));
+                                            }
+                                            copia.Close();
+                                            doc.Close();
                                         }
-                                        copia.Close();
-                                        doc.Close();
+                                        else
+                                        {
+                                            EscribirEnCSV(NumeroEmbarque, "Reporte PullOf", "Paginas no encontradas");
+                                        }
                                     }
                                     else
                                     {
-                                        EscribirEnCSV(NumeroControl, "Reporte PullOf", "Paginas no encontradas");
+                                        EscribirEnCSV(NumeroEmbarque, "Reporte PullOf", "Paginas no encontradas");
                                     }
+                                    reader.Close();
                                 }
                                 else
                                 {
-                                    EscribirEnCSV(NumeroControl, "Reporte PullOf", "Paginas no encontradas");
+                                    EscribirEnCSV(NumeroEmbarque, "Reporte PullOf", "No se encontro Reporte");
                                 }
-                                reader.Close();
-                            }else if (File.Exists(Path.Combine(rutaHoliday, item.NumeroReporte + ".pdf")))
-                            {
-                                PdfCopy copia = null;
-                                PdfReader reader = null;
-                                Document doc = new Document();
-                                reader = new PdfReader(Path.Combine(rutaHoliday, item.NumeroReporte + ".pdf"));
-                                if (reader != null)
-                                {
-                                    if (reader.NumberOfPages > 0)
-                                    {
-                                        copia = new PdfCopy(doc, new FileStream(rutaTemp + "\\" + item.NumeroReporte + "_Holiday.pdf", FileMode.Create));
-                                        doc.Open();
-                                        for (int i = 1; i <= reader.NumberOfPages; i++)
-                                        {
-                                            copia.AddPage(copia.GetImportedPage(reader, i));
-                                        }
-                                        copia.Close();
-                                        doc.Close();
-                                    }
-                                    else
-                                    {
-                                        EscribirEnCSV(NumeroControl, "Reporte Holiday", "Paginas no encontradas");
-                                    }
-                                }
-                                else
-                                {
-                                    EscribirEnCSV(NumeroControl, "Reporte Holiday", "Paginas no encontradas");
-                                }
-                                reader.Close();
                             }
-                            else
-                            {
-                                EscribirEnCSV(NumeroControl, "Reporte PullOf", "No se encontro Reporte");
-                                EscribirEnCSV(NumeroControl, "Reporte Holiday", "No se encontro Reporte");
-                            }
+                            ////Mezclar reportes por spool PullOF
+                            //List<string> listaPullOf1 = new List<string>();
+                            //foreach (var item in ListaNumReporte)
+                            //{
+                            //    if (File.Exists(rutaTemp + item.NumeroReporte + "_PullOf.pdf"))
+                            //    {
+                            //        listaPullOf1.Add(rutaTemp + item.NumeroReporte + "_PullOf.pdf");
+                            //    }
+                            //}
+                            //if (listaPullOf1 != null && listaPullOf1.Count > 0)
+                            //{
+                            //    foreach(var i in listaPullOf1)
+                            //    {
+                            //        MergePDF(listaPullOf1, i.ToString());
+                            //        eliminarArchivosPND(i.ToString());
+                            //    }
+                                
+                            //    //MergePDF(listaPullOf1, rutaTemp + "\\" + NumeroControl + "_PullOf.pdf");
+                            //    //eliminarArchivosPND(listaPullOf1);
+                            //}
                         }
-                        //Mezclar reportes por spool PullOF
-                        List<string> listaPullOf = new List<string>();
-                        foreach (var item in Lista)
+                        else
                         {
-                            if(File.Exists(rutaTemp + "\\" + item.NumeroReporte + "_PullOf.pdf"))
-                            {
-                                listaPullOf.Add(rutaTemp + "\\" + item.NumeroReporte + "_PullOf.pdf");
-                            }                            
+                            EscribirEnCSV(NumeroEmbarque, "Reporte PullOf", "No se encontro ningun Reporte");
                         }
-                        if(listaPullOf != null && listaPullOf.Count > 0)
-                        {
-                            MergePDF(listaPullOf, rutaTemp + "\\" + NumeroControl + "_PullOf.pdf");
-                            eliminarArchivosPND(listaPullOf);
-                        }
-                        
-                        //Mezclar reportes por spool Holiday
-                        List<string> listaHoliday = new List<string>();
-                        foreach (var item in Lista)
-                        {
-                            if(File.Exists(rutaTemp + "\\" + item.NumeroReporte + "_Holiday.pdf"))
-                            {
-                                listaHoliday.Add(rutaTemp + "\\" + item.NumeroReporte + "_Holiday.pdf");
-                            }                            
-                        }
-                        if(listaHoliday != null && listaHoliday.Count > 0)
-                        {
-                            MergePDF(listaHoliday, rutaTemp + "\\" + NumeroControl + "_Holiday.pdf");
-                            eliminarArchivosPND(listaHoliday);
-                        }                        
                     }
                     else
                     {
-                        EscribirEnCSV(NumeroControl, "Reporte PullOf", "No se encontro ningun Reporte");
-                        EscribirEnCSV(NumeroControl, "Reporte Holiday", "No se encontro ningun Reporte");
+                        EscribirEnCSV(NumeroEmbarque, "Reporte PullOf", "No se Encontro carpeta de reportes");
                     }
+                }
+                else // HOLIDAY
+                {
+                    if (Directory.Exists(rutaHoliday))
+                    {
+                        if (ListaNumReporte != null && ListaNumReporte.Count > 0)
+                        {
+                            foreach (var item in ListaNumReporte)
+                            {
+                                if (File.Exists(Path.Combine(rutaHoliday, item.NumeroReporte + ".pdf")))
+                                {
+                                    PdfCopy copia = null;
+                                    PdfReader reader = null;
+                                    Document doc = new Document();
+                                    reader = new PdfReader(Path.Combine(rutaHoliday, item.NumeroReporte + ".pdf"));
+                                    if (reader != null)
+                                    {
+                                        if (reader.NumberOfPages > 0)
+                                        {
+                                            copia = new PdfCopy(doc, new FileStream(rutaTemp + "\\" + item.NumeroReporte + "_Holiday.pdf", FileMode.Create));
+                                            doc.Open();
+                                            for (int i = 1; i <= reader.NumberOfPages; i++)
+                                            {
+                                                copia.AddPage(copia.GetImportedPage(reader, i));
+                                            }
+                                            copia.Close();
+                                            doc.Close();
+                                        }
+                                        else
+                                        {
+                                            EscribirEnCSV(NumeroEmbarque, "Reporte Holiday", "Paginas no encontradas");
+                                        }
+                                    }
+                                    else
+                                    {
+                                        EscribirEnCSV(NumeroEmbarque, "Reporte Holiday", "Paginas no encontradas");
+                                    }
+                                    reader.Close();
+                                }
+                                else
+                                {
+                                    EscribirEnCSV(NumeroEmbarque, "Reporte Holiday", "No se encontro Reporte");
+                                }
+                            }
+
+                            ////Mezclar reportes por spool Holiday
+                            //List<string> listaHoliday1 = new List<string>();
+                            //foreach (var item in ListaNumReporte)
+                            //{
+                            //    if (File.Exists(rutaTemp + item.NumeroReporte + "_Holiday.pdf"))
+                            //    {
+                            //        listaHoliday1.Add(rutaTemp + item.NumeroReporte + "_Holiday.pdf");
+                            //    }
+                            //}
+                            //if (listaHoliday1 != null && listaHoliday1.Count > 0)
+                            //{
+                            //    foreach(var i in listaHoliday1)
+                            //    {
+                            //        MergePDF(listaHoliday1, i.ToString());
+                            //        eliminarArchivosPND(i.ToString());
+                            //    }                                
+                                
+                            //}
+                        }
+                        else
+                        {
+                            EscribirEnCSV(NumeroEmbarque, "Reporte Holiday", "No se encontro ningun Reporte");
+                        }
+                    }
+                    else
+                    {
+                        EscribirEnCSV(NumeroEmbarque, "Reporte Holiday", "No se Encontro carpeta de reportes");
+                    }
+                }
+                if(ListaNumReporte.Count > 0)
+                {
+                    foreach(var item in ListaNumReporte)
+                    {
+                        retorno.Add(item.NumeroReporte);
+                    }
+                }
+                return retorno;
+            }
+            catch (Exception e)
+            {
+                EscribirEnCSV(NumeroEmbarque, "Reporte PullOf-Holiday", "Error Obteniendo Numeros de Reporte: " + e.Message);
+                return null;
+            }            
+        }
+        public void Dimensional_X_Spool(Proyecto Proyecto, string NumeroControl, string RutaReportes)
+        {
+            try
+            {
+                PdfReader reader = null;
+                PdfCopy copia = null;
+                Document doc = new Document();
+                string carpetaDimensional = ConfigurationManager.AppSettings["CarpetaDimensional"].ToString();
+                RutaReportes = String.Concat(RutaReportes, carpetaDimensional);
+                string rutaTemp = Path.GetTempPath();
+                if (Directory.Exists(RutaReportes))
+                {
+                    if (File.Exists(Path.Combine(RutaReportes, Proyecto.FolioDimensional + NumeroControl + ".pdf")))
+                    {
+                        reader = new PdfReader(Path.Combine(RutaReportes, Proyecto.FolioDimensional + NumeroControl + ".pdf"));
+                        if (reader != null)
+                        {
+                            if (reader.NumberOfPages >= 1)
+                            {
+                                copia = new PdfCopy(doc, new FileStream(rutaTemp + "\\" + Proyecto.FolioDimensional + NumeroControl + "_Dimensional.pdf", FileMode.Create));
+                                doc.Open();
+                                for (int i = 1; i <= reader.NumberOfPages; i++)
+                                {
+                                    copia.AddPage(copia.GetImportedPage(reader, i));
+                                }
+                                copia.Close();
+                                doc.Close();
+                            }
+                            else
+                            {
+                                EscribirEnCSV(NumeroControl, "Dimensional", "Pagina no encontrada");
+                            }
+                        }
+                        else
+                        {
+                            EscribirEnCSV(NumeroControl, "Dimensional", "Dimensional no encontrado");
+                        }
+                        reader.Close();
+                    }
+                    else
+                    {
+                        EscribirEnCSV(NumeroControl, "Dimensional", "Dimensional no encontrado");
+                    }
+
                 }
                 else
                 {
-                    EscribirEnCSV(NumeroControl, "Reporte PullOf", "No se Encontro carpeta de reportes");
-                    EscribirEnCSV(NumeroControl, "Reporte Holiday", "No se Encontro carpeta de reportes");
+                    EscribirEnCSV(NumeroControl, "Dimensional", "Carpeta de Dimensional no encontrada");
                 }
 
             }
             catch (Exception e)
             {
-                EscribirEnCSV(NumeroControl, "Reporte PullOf", "Error Obteniendo Numeros de Reporte: " + e.Message);
-                EscribirEnCSV(NumeroControl, "Reporte Holiday", "Error Obteniendo Numeros de Reporte: " + e.Message);
+                EscribirEnCSV(NumeroControl, "Dimensional", "Error Obteniendo Dimensional: " + e.Message);
             }
         }
 
-        public bool GenerarParticionamiento(List<Spool> Spools, string NumeroEmbarque, string rutaDestino)
+        //public bool GenerarParticionamiento(List<Spool> Spools, string NumeroEmbarque, string rutaDestino)
+        public bool GenerarParticionamiento(List<Spool> Spools, string NumeroEmbarque, string rutaDestino, List<List<string>> NumeroReportes)
         {
             bool estatus = false;
             try
@@ -1521,7 +2115,7 @@ namespace PDFReportes.Utilidades
                 {             
                     if(File.Exists(Path.Combine(rutaTemp, item.OrdenTrabajo + "-" + item.Consecutivo + ".pdf")))
                     {
-                        suma += Decimal.Parse(ConvertToMegabytes(UInt64.Parse((new FileInfo(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + ".pdf")).Length.ToString())));
+                        suma += Decimal.Parse(ConvertToMegabytes(UInt64.Parse((new FileInfo(rutaTemp + "\\" + item.NumeroControl +  ".pdf")).Length.ToString())));
                         if (suma < Decimal.Parse(limiteMB.ToString()))
                         {
                             SpoolParticion.Add(new SpoolParticion
@@ -1534,7 +2128,7 @@ namespace PDFReportes.Utilidades
                         {
                             numParticion++;
                             suma = 0;
-                            suma += Decimal.Parse(ConvertToMegabytes(UInt64.Parse((new FileInfo(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + ".pdf")).Length.ToString())));
+                            suma += Decimal.Parse(ConvertToMegabytes(UInt64.Parse((new FileInfo(rutaTemp + "\\" + item.NumeroControl +  ".pdf")).Length.ToString())));
                             SpoolParticion.Add(new SpoolParticion
                             {
                                 NumeroControl = item.OrdenTrabajo + "-" + item.Consecutivo,
@@ -1550,7 +2144,8 @@ namespace PDFReportes.Utilidades
                     {
                         if (Decimal.Parse(ConvertToMegabytes(UInt64.Parse((new FileInfo(rutaTemp + "\\" + SpoolParticion[0].NumeroControl + ".pdf")).Length.ToString()))) > 0)
                         {
-                            GenerarArchivoGeneralParticionado(SpoolParticion, NumeroEmbarque, rutaDestino);
+                            //GenerarArchivoGeneralParticionado(SpoolParticion, NumeroEmbarque, rutaDestino);
+                            GenerarArchivoGeneralParticionado(SpoolParticion, NumeroEmbarque, rutaDestino, NumeroReportes);
                             estatus = true;
                         }
                         else
@@ -1560,7 +2155,8 @@ namespace PDFReportes.Utilidades
                     }
                     else
                     {
-                        GenerarArchivoGeneralParticionado(SpoolParticion, NumeroEmbarque, rutaDestino);
+                        //GenerarArchivoGeneralParticionado(SpoolParticion, NumeroEmbarque, rutaDestino);
+                        GenerarArchivoGeneralParticionado(SpoolParticion, NumeroEmbarque, rutaDestino, NumeroReportes);
                         estatus = true;
                     }                                        
                 }
@@ -1578,7 +2174,7 @@ namespace PDFReportes.Utilidades
         }
 
 
-        public void GenerarArchivoGeneralParticionado(List<SpoolParticion> ListaSpool, string NumeroEmbarque, string rutaDestino)
+        public void GenerarArchivoGeneralParticionado(List<SpoolParticion> ListaSpool, string NumeroEmbarque, string rutaDestino, List<List<string>> ListaNumReporte)
         {
             try
             {
@@ -1595,6 +2191,19 @@ namespace PDFReportes.Utilidades
                         if (File.Exists(Path.Combine(rutaTemp, item.NumeroControl + ".pdf")))
                             rutasArchivos.Add(Path.Combine(rutaTemp, item.NumeroControl + ".pdf"));
                     }
+                    //AGREGO LOS NUMEROS DE REPORTE DE PULLOF Y HOLIDAY
+                    if(ListaNumReporte.Count > 0)
+                    {
+                        for(int i = 0; i < ListaNumReporte.Count; i++)
+                        {
+                            for(int j = 0; j < ListaNumReporte[i].Count; j++)
+                            {
+                                if (File.Exists(Path.Combine(rutaTemp, ListaNumReporte[i][j].ToString() + ".pdf")))
+                                    rutasArchivos.Add(Path.Combine(rutaTemp, ListaNumReporte[i][j].ToString() + ".pdf"));
+                            }
+                        }
+                    }
+
                     MergePDF(rutasArchivos, rutaDestino + "\\" + NumeroEmbarque + ".pdf");                                 
                 }
                 else
@@ -1610,6 +2219,18 @@ namespace PDFReportes.Utilidades
                                     rutasArchivos.Add(Path.Combine(rutaTemp, item2.NumeroControl + ".pdf"));
                             }                           
                         }
+                        //AGREGO LOS NUMEROS DE REPORTE DE PULLOF Y HOLIDAY
+                        if (ListaNumReporte.Count > 0)
+                        {
+                            for (int i = 0; i < ListaNumReporte.Count; i++)
+                            {
+                                for (int j = 0; j < ListaNumReporte[i].Count; j++)
+                                {
+                                    if (File.Exists(Path.Combine(rutaTemp, ListaNumReporte[i][j].ToString() + ".pdf")))
+                                        rutasArchivos.Add(Path.Combine(rutaTemp, ListaNumReporte[i][j].ToString() + ".pdf"));
+                                }
+                            }
+                        }
                         MergePDF(rutasArchivos, rutaDestino + "\\" + NumeroEmbarque + " Part " + item.NumParticion + ".pdf");
                         rutasArchivos = null;
                     }                    
@@ -1622,6 +2243,21 @@ namespace PDFReportes.Utilidades
                     {
                         File.SetAttributes(rutaTemp + "\\" + item.NumeroControl + ".pdf", FileAttributes.Normal);
                         File.Delete(rutaTemp + "\\" + item.NumeroControl + ".pdf");
+                    }
+                }
+                // ELIMINA ARCHIVOS TMP DE NUMEROS DE REPORTE
+                if(ListaNumReporte.Count > 0)
+                {
+                    for(int i = 0; i < ListaNumReporte.Count; i++)
+                    {
+                        for(int j = 0; j < ListaNumReporte[i].Count; j++)
+                        {
+                            if(File.Exists(rutaTemp + "\\" + ListaNumReporte[i][j].ToString() + ".pdf"))
+                            {
+                                File.SetAttributes(rutaTemp + "\\" + ListaNumReporte[i][j].ToString() + ".pdf", FileAttributes.Normal);
+                                File.Delete(rutaTemp + "\\" + ListaNumReporte[i][j].ToString() + ".pdf");
+                            }
+                        }
                     }
                 }
 
@@ -1650,7 +2286,25 @@ namespace PDFReportes.Utilidades
                 throw;
             }
         }
-        public void UnirArchivos(List<Spool> ListaSpool)
+
+        public void eliminarArchivosPND(string lista)
+        {
+            try
+            {               
+                if (File.Exists(lista))
+                {
+                    File.SetAttributes(lista, FileAttributes.Normal);
+                    File.Delete(lista);
+                }                
+            }
+            catch (Exception e)
+            {
+                throw;
+            }
+        }
+
+        //public void UnirArchivos(List<Spool> ListaSpool)
+        public void UnirArchivos(string FolioDimensional, List<Spool> ListaSpool, List<List<string>> Listas)
         {
             try
             {                
@@ -1660,12 +2314,13 @@ namespace PDFReportes.Utilidades
                     extRTPOST = "_RTPOST.pdf",
                     extPTPOST = "_PTPOST.pdf",
                     extUTPOST = "_UTPOST.pdf",
+                    extHTPOST = "_HTPOST.pdf",
                     extRT = "_RT.pdf",
                     extPT = "_PT.pdf",
                     extUT = "_UT.pdf",
                     extPMI = "_PMI.pdf", extPWHT = "_PWHT.pdf", extSandBlast = "_SandBlast.pdf", extPrimario = "_Primario.pdf",
                     extIntermedio = "_Intermedio.pdf", extAcabado = "_Acabado.pdf", extAdherencia = "_Adherencia.pdf", extPullOf = "_PullOf.pdf",
-                    extHoliday = "_Holiday.pdf";
+                    extHoliday = "_Holiday.pdf", extDimensional = "_Dimensional.pdf", extFerrita = "_Ferrita.pdf", extDurezas = "_Durezas.pdf";
                 List<string> rutasArchivos = null;
                 string NumeroControl = "";
                 foreach (var item in ListaSpool)
@@ -1694,9 +2349,16 @@ namespace PDFReportes.Utilidades
                         rutasArchivos.Add(Path.Combine(rutaTemp, NumeroControl + extUT));
                     if (File.Exists(Path.Combine(rutaTemp, NumeroControl + extPMI)))
                         rutasArchivos.Add(Path.Combine(rutaTemp, NumeroControl + extPMI));
-                    //PWHT
+                    if (File.Exists(Path.Combine(rutaTemp, NumeroControl + extFerrita)))
+                        rutasArchivos.Add(Path.Combine(rutaTemp, NumeroControl + extFerrita));
+
+                    //TT
                     if (File.Exists(Path.Combine(rutaTemp, NumeroControl + extPWHT)))
                         rutasArchivos.Add(Path.Combine(rutaTemp, NumeroControl + extPWHT));
+                    if (File.Exists(Path.Combine(rutaTemp, NumeroControl + extHTPOST)))
+                        rutasArchivos.Add(Path.Combine(rutaTemp, NumeroControl + extHTPOST));
+                    if (File.Exists(Path.Combine(rutaTemp, NumeroControl + extDurezas)))
+                        rutasArchivos.Add(Path.Combine(rutaTemp, NumeroControl + extDurezas));
                     //PINTURA
                     if (File.Exists(Path.Combine(rutaTemp, NumeroControl + extSandBlast)))
                         rutasArchivos.Add(Path.Combine(rutaTemp, NumeroControl + extSandBlast));
@@ -1708,113 +2370,182 @@ namespace PDFReportes.Utilidades
                         rutasArchivos.Add(Path.Combine(rutaTemp, NumeroControl + extAcabado));
                     if (File.Exists(Path.Combine(rutaTemp, NumeroControl + extAdherencia)))
                         rutasArchivos.Add(Path.Combine(rutaTemp, NumeroControl + extAdherencia));
-                    if (File.Exists(Path.Combine(rutaTemp, NumeroControl + extPullOf)))
-                        rutasArchivos.Add(Path.Combine(rutaTemp, NumeroControl + extPullOf));
-                    if (File.Exists(Path.Combine(rutaTemp, NumeroControl + extHoliday)))
-                        rutasArchivos.Add(Path.Combine(rutaTemp, NumeroControl + extHoliday));
+                    //DIMENSIONAL
+                    if (File.Exists(Path.Combine(rutaTemp, FolioDimensional + NumeroControl + extDimensional)))
+                        rutasArchivos.Add(Path.Combine(rutaTemp, FolioDimensional + NumeroControl + extDimensional));
+                   
 
                     if(rutasArchivos != null)
                     {
-                        MergePDF(rutasArchivos, rutaTemp + "\\" + NumeroControl + ".pdf");
-                    }                    
+                        MergePDF(rutasArchivos, rutaTemp + "\\" + NumeroControl + ".pdf");                        
+                    }                                        
                     rutasArchivos = null;
                 }
+                //PINTURA -- PULLOF Y HOLIDAY                
+                if (Listas != null && Listas.Count > 0)
+                {
+                    rutasArchivos = new List<string>();
+                    for (int i = 0; i < Listas.Count; i++)
+                    {
+                        for (int j = 0; j < Listas[i].Count; j++)
+                        {
+                            if (File.Exists(Path.Combine(rutaTemp, Listas[i][j].ToString() + extPullOf)))
+                            {
+                                rutasArchivos.Add(Path.Combine(rutaTemp, Listas[i][j].ToString() + extPullOf));
+                                MergePDF(rutasArchivos, rutaTemp + "\\" + Listas[i][j].ToString() + ".pdf");
+                            }                            
+                            if (File.Exists(Path.Combine(rutaTemp, Listas[i][j].ToString() + extHoliday)))
+                            {
+                                rutasArchivos.Add(Path.Combine(rutaTemp, Listas[i][j].ToString() + extHoliday));
+                                MergePDF(rutasArchivos, rutaTemp + "\\" + Listas[i][j].ToString() + ".pdf");
+                            }                            
+                        }
+                    }
+                    //if (rutasArchivos != null)
+                    //{
+
+                    //    MergePDF(rutasArchivos, rutaTemp + "\\" + NumeroControl + ".pdf");
+                    //}
+                    rutasArchivos = null;
+                }
+                
 
                 foreach (var item in ListaSpool)
                 {
                     // ELIMINA TMP TRAVELER
-                    if (File.Exists(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extTraveler))
+                    if (File.Exists(rutaTemp + "\\" + item.NumeroControl +  extTraveler))
                     {
-                        File.SetAttributes(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extTraveler, FileAttributes.Normal);
-                        File.Delete(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extTraveler);
+                        File.SetAttributes(rutaTemp + "\\" + item.NumeroControl +  extTraveler, FileAttributes.Normal);
+                        File.Delete(rutaTemp + "\\" + item.NumeroControl +  extTraveler);
                     }
                     // ELIMINA TMP CERTIFICADOS
-                    if (File.Exists(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extCertificado))
+                    if (File.Exists(rutaTemp + "\\" + item.NumeroControl +  extCertificado))
                     {
-                        File.SetAttributes(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extCertificado, FileAttributes.Normal);
-                        File.Delete(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extCertificado);
+                        File.SetAttributes(rutaTemp + "\\" + item.NumeroControl +  extCertificado, FileAttributes.Normal);
+                        File.Delete(rutaTemp + "\\" + item.NumeroControl +  extCertificado);
                     }
                     // ELIMINA TMP PNDS
-                    if (File.Exists(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extRTPOST))
+                    if (File.Exists(rutaTemp + "\\" + item.NumeroControl +  extRTPOST))
                     {
-                        File.SetAttributes(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extRTPOST, FileAttributes.Normal);
-                        File.Delete(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extRTPOST);
+                        File.SetAttributes(rutaTemp + "\\" + item.NumeroControl +  extRTPOST, FileAttributes.Normal);
+                        File.Delete(rutaTemp + "\\" + item.NumeroControl +  extRTPOST);
                     }
-                    if (File.Exists(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extPTPOST))
+                    if (File.Exists(rutaTemp + "\\" + item.NumeroControl +  extPTPOST))
                     {
-                        File.SetAttributes(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extPTPOST, FileAttributes.Normal);
-                        File.Delete(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extPTPOST);
+                        File.SetAttributes(rutaTemp + "\\" + item.NumeroControl +  extPTPOST, FileAttributes.Normal);
+                        File.Delete(rutaTemp + "\\" + item.NumeroControl +  extPTPOST);
                     }
-                    if (File.Exists(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extUTPOST))
+                    if (File.Exists(rutaTemp + "\\" + item.NumeroControl +  extUTPOST))
                     {
-                        File.SetAttributes(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extUTPOST, FileAttributes.Normal);
-                        File.Delete(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extUTPOST);
+                        File.SetAttributes(rutaTemp + "\\" + item.NumeroControl +  extUTPOST, FileAttributes.Normal);
+                        File.Delete(rutaTemp + "\\" + item.NumeroControl +  extUTPOST);
                     }
-                    if (File.Exists(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extRT))
+                    if (File.Exists(rutaTemp + "\\" + item.NumeroControl +  extRT))
                     {
-                        File.SetAttributes(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extRT, FileAttributes.Normal);
-                        File.Delete(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extRT);
+                        File.SetAttributes(rutaTemp + "\\" + item.NumeroControl +  extRT, FileAttributes.Normal);
+                        File.Delete(rutaTemp + "\\" + item.NumeroControl +  extRT);
                     }
-                    if (File.Exists(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extPT))
+                    if (File.Exists(rutaTemp + "\\" + item.NumeroControl +  extPT))
                     {
-                        File.SetAttributes(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extPT, FileAttributes.Normal);
-                        File.Delete(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extPT);
+                        File.SetAttributes(rutaTemp + "\\" + item.NumeroControl +  extPT, FileAttributes.Normal);
+                        File.Delete(rutaTemp + "\\" + item.NumeroControl +  extPT);
                     }
-                    if (File.Exists(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extUT))
+                    if (File.Exists(rutaTemp + "\\" + item.NumeroControl +  extUT))
                     {
-                        File.SetAttributes(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extUT, FileAttributes.Normal);
-                        File.Delete(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extUT);
+                        File.SetAttributes(rutaTemp + "\\" + item.NumeroControl +  extUT, FileAttributes.Normal);
+                        File.Delete(rutaTemp + "\\" + item.NumeroControl +  extUT);
                     }
-                    if (File.Exists(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extPMI))
+                    if (File.Exists(rutaTemp + "\\" + item.NumeroControl +  extPMI))
                     {
-                        File.SetAttributes(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extPMI, FileAttributes.Normal);
-                        File.Delete(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extPMI);
+                        File.SetAttributes(rutaTemp + "\\" + item.NumeroControl +  extPMI, FileAttributes.Normal);
+                        File.Delete(rutaTemp + "\\" + item.NumeroControl +  extPMI);
                     }
-                    // ELIMINA TMP PWHT
-                    if (File.Exists(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extPWHT))
+                    if(File.Exists(rutaTemp + "\\" + item.NumeroControl + extFerrita))
                     {
-                        File.SetAttributes(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extPWHT, FileAttributes.Normal);
-                        File.Delete(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extPWHT);
+                        File.SetAttributes(rutaTemp + "\\" + item.NumeroControl + extFerrita, FileAttributes.Normal);
+                        File.Delete(rutaTemp + "\\" + item.NumeroControl + extFerrita);
+                    }
+                    // ELIMINA TMP TT's
+                    if (File.Exists(rutaTemp + "\\" + item.NumeroControl +  extPWHT))
+                    {
+                        File.SetAttributes(rutaTemp + "\\" + item.NumeroControl +  extPWHT, FileAttributes.Normal);
+                        File.Delete(rutaTemp + "\\" + item.NumeroControl +  extPWHT);
+                    }
+                    if(File.Exists(rutaTemp + "\\" + item.NumeroControl + extHTPOST))
+                    {
+                        File.SetAttributes(rutaTemp + "\\" + item.NumeroControl + extHTPOST, FileAttributes.Normal);
+                        File.Delete(rutaTemp + "\\" + item.NumeroControl + extHTPOST);
+                    }
+                    if(File.Exists(rutaTemp + "\\" + item.NumeroControl + extDurezas))
+                    {
+                        File.SetAttributes(rutaTemp + "\\" + item.NumeroControl + extDurezas, FileAttributes.Normal);
+                        File.Delete(rutaTemp + "\\" + item.NumeroControl + extDurezas);
                     }
                     // ELIMINA TMP PINTURA
-                    if (File.Exists(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extSandBlast))
+                    if (File.Exists(rutaTemp + "\\" + item.NumeroControl +  extSandBlast))
                     {
-                        File.SetAttributes(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extSandBlast, FileAttributes.Normal);
-                        File.Delete(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extSandBlast);
+                        File.SetAttributes(rutaTemp + "\\" + item.NumeroControl +  extSandBlast, FileAttributes.Normal);
+                        File.Delete(rutaTemp + "\\" + item.NumeroControl +  extSandBlast);
                     }
-                    if (File.Exists(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extPrimario))
+                    if (File.Exists(rutaTemp + "\\" + item.NumeroControl +  extPrimario))
                     {
-                        File.SetAttributes(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extPrimario, FileAttributes.Normal);
-                        File.Delete(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extPrimario);
+                        File.SetAttributes(rutaTemp + "\\" + item.NumeroControl +  extPrimario, FileAttributes.Normal);
+                        File.Delete(rutaTemp + "\\" + item.NumeroControl +  extPrimario);
                     }
-                    if (File.Exists(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extIntermedio))
+                    if (File.Exists(rutaTemp + "\\" + item.NumeroControl +  extIntermedio))
                     {
-                        File.SetAttributes(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extIntermedio, FileAttributes.Normal);
-                        File.Delete(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extIntermedio);
+                        File.SetAttributes(rutaTemp + "\\" + item.NumeroControl +  extIntermedio, FileAttributes.Normal);
+                        File.Delete(rutaTemp + "\\" + item.NumeroControl +  extIntermedio);
                     }
-                    if (File.Exists(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extAcabado))
+                    if (File.Exists(rutaTemp + "\\" + item.NumeroControl +  extAcabado))
                     {
-                        File.SetAttributes(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extAcabado, FileAttributes.Normal);
-                        File.Delete(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extAcabado);
+                        File.SetAttributes(rutaTemp + "\\" + item.NumeroControl +  extAcabado, FileAttributes.Normal);
+                        File.Delete(rutaTemp + "\\" + item.NumeroControl +  extAcabado);
                     }
-                    if (File.Exists(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extAdherencia))
+                    if (File.Exists(rutaTemp + "\\" + item.NumeroControl +  extAdherencia))
                     {
-                        File.SetAttributes(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extAdherencia, FileAttributes.Normal);
-                        File.Delete(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extAdherencia);
+                        File.SetAttributes(rutaTemp + "\\" + item.NumeroControl +  extAdherencia, FileAttributes.Normal);
+                        File.Delete(rutaTemp + "\\" + item.NumeroControl +  extAdherencia);
                     }
-                    if (File.Exists(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extPullOf))
+                    //ELIMINA TMP DIMENSIONAL
+                    if(File.Exists(rutaTemp + "\\" + FolioDimensional + item.NumeroControl + extDimensional))
                     {
-                        File.SetAttributes(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extPullOf, FileAttributes.Normal);
-                        File.Delete(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extPullOf);
+                        File.SetAttributes(rutaTemp + "\\" + FolioDimensional + item.NumeroControl + extDimensional, FileAttributes.Normal);
+                        File.Delete(rutaTemp + "\\" + FolioDimensional + item.NumeroControl + extDimensional);
                     }
-                    if (File.Exists(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extHoliday))
-                    {
-                        File.SetAttributes(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extHoliday, FileAttributes.Normal);
-                        File.Delete(rutaTemp + "\\" + item.OrdenTrabajo + "-" + item.Consecutivo + extHoliday);
-                    }
+
+                    //if (File.Exists(rutaTemp + "\\" + item.NumeroControl +  extPullOf))
+                    //{
+                    //    File.SetAttributes(rutaTemp + "\\" + item.NumeroControl +  extPullOf, FileAttributes.Normal);
+                    //    File.Delete(rutaTemp + "\\" + item.NumeroControl +  extPullOf);
+                    //}
+                    //if (File.Exists(rutaTemp + "\\" + item.NumeroControl +  extHoliday))
+                    //{
+                    //    File.SetAttributes(rutaTemp + "\\" + item.NumeroControl +  extHoliday, FileAttributes.Normal);
+                    //    File.Delete(rutaTemp + "\\" + item.NumeroControl +  extHoliday);
+                    //}
 
                 }
-
+                //ELIMINAR ARCHIVOS TEMPORALES DE PULLOF Y HOLIDAY
+                if (Listas != null && Listas.Count > 0)
+                {
+                    for (int i = 0; i < Listas.Count; i++)
+                    {
+                        for (int j = 0; j < Listas[i].Count; j++)
+                        {
+                            if(File.Exists(rutaTemp + "\\" + Listas[i][j].ToString() + extPullOf))
+                            {
+                                File.SetAttributes(rutaTemp + "\\" + Listas[i][j].ToString() + extPullOf, FileAttributes.Normal);
+                                File.Delete(rutaTemp + "\\" + Listas[i][j].ToString() + extPullOf);
+                            }
+                            if (File.Exists(rutaTemp + "\\" + Listas[i][j].ToString() + extHoliday))
+                            {
+                                File.SetAttributes(rutaTemp + "\\" + Listas[i][j].ToString() + extHoliday, FileAttributes.Normal);
+                                File.Delete(rutaTemp + "\\" + Listas[i][j].ToString() + extHoliday);
+                            }                           
+                        }
+                    }
+                }            
             }
             catch (Exception e)
             {

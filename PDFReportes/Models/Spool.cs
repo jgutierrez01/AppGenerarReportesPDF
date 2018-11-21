@@ -8,9 +8,11 @@ namespace PDFReportes.Models
 {
     public class Spool
     {
+        public string NumeroControl { get; set; }
         public string OrdenTrabajo { get; set; }
         public string Consecutivo { get; set; }
         public int NumeroPaginas { get; set; }
+        public bool AplicaGranel { get; set; }
     }
 
     public class NoEncontrado
@@ -28,14 +30,7 @@ namespace PDFReportes.Models
         public int TipoPruebaID { get; set; }
     }
 
-    public class ReportePND
-    {
-        public string NumeroControl { get; set; }
-        public int TipoPruebaID { get; set; }
-        public string NumeroReporte { get; set; }
-    }
-
-    public class ReportePWHT
+    public class ReporteTT_PND
     {
         public string NumeroControl { get; set; }
         public string NumeroReporte { get; set; }
@@ -51,5 +46,14 @@ namespace PDFReportes.Models
     {
         public string NumeroControl { get; set; }
         public int NumParticion { get; set; }
+    }
+
+    public class NumeroControlClass
+    {
+        public string NumeroControl { get; set; }
+    }
+    public class NumeroReportePullHoliday
+    {
+        public string NumeroReporte { get; set; }
     }
 }

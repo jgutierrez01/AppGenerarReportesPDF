@@ -12,3 +12,17 @@ C:\Users\Fabian Gutierrez\Documents\Visual Studio 2015\Projects\PDFReportes\PDFR
 C:\Users\Fabian Gutierrez\Documents\Visual Studio 2015\Projects\PDFReportes\PDFReportes\obj\Debug\PDFReportes.application
 C:\Users\Fabian Gutierrez\Documents\Visual Studio 2015\Projects\PDFReportes\PDFReportes\obj\Debug\PDFReportes.exe
 C:\Users\Fabian Gutierrez\Documents\Visual Studio 2015\Projects\PDFReportes\PDFReportes\obj\Debug\PDFReportes.pdb
+C:\Users\Fabian Gutierrez\Source\Repos\AppGenerarReportesPDF\PDFReportes\bin\Debug\PDFReportes.exe.config
+C:\Users\Fabian Gutierrez\Source\Repos\AppGenerarReportesPDF\PDFReportes\bin\Debug\PDFReportes.exe.manifest
+C:\Users\Fabian Gutierrez\Source\Repos\AppGenerarReportesPDF\PDFReportes\bin\Debug\PDFReportes.application
+C:\Users\Fabian Gutierrez\Source\Repos\AppGenerarReportesPDF\PDFReportes\bin\Debug\PDFReportes.exe
+C:\Users\Fabian Gutierrez\Source\Repos\AppGenerarReportesPDF\PDFReportes\bin\Debug\PDFReportes.pdb
+C:\Users\Fabian Gutierrez\Source\Repos\AppGenerarReportesPDF\PDFReportes\bin\Debug\itextsharp.dll
+C:\Users\Fabian Gutierrez\Source\Repos\AppGenerarReportesPDF\PDFReportes\bin\Debug\itextsharp.xml
+C:\Users\Fabian Gutierrez\Source\Repos\AppGenerarReportesPDF\PDFReportes\obj\Debug\PDFReportes.Form1.resources
+C:\Users\Fabian Gutierrez\Source\Repos\AppGenerarReportesPDF\PDFReportes\obj\Debug\PDFReportes.Properties.Resources.resources
+C:\Users\Fabian Gutierrez\Source\Repos\AppGenerarReportesPDF\PDFReportes\obj\Debug\PDFReportes.csproj.GenerateResource.Cache
+C:\Users\Fabian Gutierrez\Source\Repos\AppGenerarReportesPDF\PDFReportes\obj\Debug\PDFReportes.exe.manifest
+C:\Users\Fabian Gutierrez\Source\Repos\AppGenerarReportesPDF\PDFReportes\obj\Debug\PDFReportes.application
+C:\Users\Fabian Gutierrez\Source\Repos\AppGenerarReportesPDF\PDFReportes\obj\Debug\PDFReportes.exe
+C:\Users\Fabian Gutierrez\Source\Repos\AppGenerarReportesPDF\PDFReportes\obj\Debug\PDFReportes.pdb
