@@ -15,32 +15,11 @@ namespace PDFReportes.Models
         public bool AplicaGranel { get; set; }
     }
 
-    public class NoEncontrado
-    {
-        public string NumeroControl { get; set; }
-        public string Reporte { get; set; }
-        public string Error { get; set; }
-    }
-
-    public class NumReporte
-    {
-        public int SpoolID { get; set; }
-        public string NumeroControl { get; set; }
-        public string NumeroReporte { get; set; }
-        public int TipoPruebaID { get; set; }
-    }
-
-    public class ReporteTT_PND
-    {
-        public string NumeroControl { get; set; }
-        public string NumeroReporte { get; set; }
-    }
-
-    public class ReportePintura
-    {
+    public class Reporte
+    {        
         public string NumeroControl { get; set; }
         public string NumeroReporte { get; set; }        
-    }
+    }    
 
     public class SpoolParticion
     {

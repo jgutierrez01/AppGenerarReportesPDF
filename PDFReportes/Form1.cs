@@ -169,7 +169,10 @@ namespace PDFReportes
                                         foreach (var item in ListaSpool)
                                         {
                                             //Util.Instance.TravelerXSpool(item.OrdenTrabajo, item.NumeroControl, item.NumeroPaginas, emb.NumeroEmbarque, proyecto.RutaTraveler);
-                                            Util.Instance.TravelerXSpool(item, proyecto.RutaTraveler);
+                                            if(proyecto.ProyectoID != 81)
+                                            {
+                                                Util.Instance.TravelerXSpool(item, proyecto.RutaTraveler);
+                                            }                                            
                                             Util.Instance.CertificadoXSpool(item.NumeroControl, proyecto.RutaReportes);
                                             Util.Instance.RTPOST_X_Spool(proyecto.ProyectoID, item.NumeroControl, proyecto.RutaReportes);
                                             Util.Instance.PTPOST_X_Spool(proyecto.ProyectoID, item.NumeroControl, proyecto.RutaReportes);
@@ -180,6 +183,7 @@ namespace PDFReportes
                                             Util.Instance.PMI_X_Spool(proyecto.ProyectoID, item.NumeroControl, proyecto.RutaReportes);
                                             Util.Instance.Ferrita_X_Spool(proyecto.ProyectoID, item.NumeroControl, proyecto.RutaReportes);
                                             Util.Instance.PWHT_X_Spool(proyecto.ProyectoID, item.NumeroControl, proyecto.RutaReportes);
+                                            Util.Instance.Preheat_X_Spool(proyecto.ProyectoID, item.NumeroControl, proyecto.RutaReportes);
                                             Util.Instance.HTPOST_X_Spool(proyecto.ProyectoID, item.NumeroControl, proyecto.RutaReportes);
                                             Util.Instance.Durezas_X_Spool(proyecto.ProyectoID, item.NumeroControl, proyecto.RutaReportes);
                                             Util.Instance.SandBlast_X_Spool(proyecto.ProyectoID, item.NumeroControl, proyecto.RutaReportes);
@@ -188,8 +192,7 @@ namespace PDFReportes
                                             Util.Instance.Acabado_X_Spool(proyecto.ProyectoID, item.NumeroControl, proyecto.RutaReportes);
                                             Util.Instance.Adherencia_X_Spool(proyecto.ProyectoID, item.NumeroControl, proyecto.RutaReportes);
                                             Util.Instance.Dimensional_X_Spool(proyecto, item.NumeroControl, proyecto.RutaReportes);
-                                            //Util.Instance.PullOf_X_Spool(proyecto.ProyectoID, item.NumeroControl, proyecto.RutaReportes);
-                                            //Util.Instance.Holiday_X_Spool(proyecto.ProyectoID, item.NumeroControl, proyecto.RutaReportes);
+                                            Util.Instance.Espesores_X_Spool(proyecto.ProyectoID, item.NumeroControl, proyecto.RutaReportes);
                                             ListaNumeroControl.Add(new NumeroControlClass { NumeroControl = item.NumeroControl });
                                             numSpool++;
                                         }
@@ -207,24 +210,20 @@ namespace PDFReportes
                                         }
 
                                         if (ListaSpool.Count == numSpool)
-                                        {
-                                            //Util.Instance.UnirArchivos(ListaSpool);
-                                            Util.Instance.UnirArchivos(proyecto.FolioDimensional, ListaSpool, Listas);
-                                            //if (Util.Instance.GenerarParticionamiento(ListaSpool, emb.NumeroEmbarque, RutaGuardar))
+                                        {                                            
+                                            Util.Instance.UnirArchivos(proyecto.FolioDimensional, ListaSpool, Listas);                                            
                                             if (Util.Instance.GenerarParticionamiento(ListaSpool, emb.NumeroEmbarque, RutaGuardar, Listas))
                                             {
                                                 ////CIERRA CSV
                                                 Util.Instance.CerrarArchivoCSV();
                                                 MessageBox.Show("Archivo Generado Correctamente en la ruta: " + Environment.NewLine + RutaGuardar,
-                                                    "Correcto", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                                                //desbloquearControles();
+                                                    "Correcto", MessageBoxButtons.OK, MessageBoxIcon.Information);                                                
                                             }
                                             else
                                             {
                                                 ////CIERRA CSV
                                                 Util.Instance.CerrarArchivoCSV();
-                                                MessageBox.Show("No se encontró ningún reporte para el embarque: " + emb.NumeroEmbarque, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                                                //desbloquearControles();
+                                                MessageBox.Show("No se encontró ningún reporte para el embarque: " + emb.NumeroEmbarque, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);                                                
                                             }
                                         }
                                         else

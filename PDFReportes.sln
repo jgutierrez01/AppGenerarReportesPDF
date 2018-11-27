@@ -5,7 +5,7 @@ VisualStudioVersion = 14.0.24720.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PDFReportes", "PDFReportes\PDFReportes.csproj", "{71F1EA26-07B2-4A08-80D9-6FC52EBAB0DD}"
 EndProject
-Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "Generador Reportes PDF", "Generador Reportes PDF\Generador Reportes PDF.vdproj", "{FD56FF57-0E10-41C9-B0EA-2C7F4ACF9B2E}"
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "Generador Archivos Embarques", "Generador Archivos Embarques\Generador Archivos Embarques.vdproj", "{552A0918-6170-427C-8DE7-D9D1F9D5852D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,8 +17,8 @@ Global
 		{71F1EA26-07B2-4A08-80D9-6FC52EBAB0DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{71F1EA26-07B2-4A08-80D9-6FC52EBAB0DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{71F1EA26-07B2-4A08-80D9-6FC52EBAB0DD}.Release|Any CPU.Build.0 = Release|Any CPU
-		{FD56FF57-0E10-41C9-B0EA-2C7F4ACF9B2E}.Debug|Any CPU.ActiveCfg = Debug
-		{FD56FF57-0E10-41C9-B0EA-2C7F4ACF9B2E}.Release|Any CPU.ActiveCfg = Release
+		{552A0918-6170-427C-8DE7-D9D1F9D5852D}.Debug|Any CPU.ActiveCfg = Debug
+		{552A0918-6170-427C-8DE7-D9D1F9D5852D}.Release|Any CPU.ActiveCfg = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -5,10 +5,10 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("PDFReportes")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("Generador de Reportes PDF")]
+[assembly: AssemblyDescription("Obtiene reportes de spools por embarque")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("STEELGO")]
 [assembly: AssemblyProduct("PDFReportes")]
 [assembly: AssemblyCopyright("Copyright ©  2018")]
 [assembly: AssemblyTrademark("")]

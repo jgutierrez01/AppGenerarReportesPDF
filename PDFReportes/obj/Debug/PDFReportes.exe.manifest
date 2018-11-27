@@ -54,24 +54,24 @@
     </dependentAssembly>
   </dependency>
   <dependency>
-    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="PDFReportes.exe" size="193568">
+    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="PDFReportes.exe" size="195104">
       <assemblyIdentity name="PDFReportes" version="1.0.0.0" language="neutral" processorArchitecture="msil" />
       <hash>
         <dsig:Transforms>
           <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
         </dsig:Transforms>
         <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha256" />
-        <dsig:DigestValue>X8+uDSL2j0aZ3Lh51CT+WALHrspXjU+Z9Tck2LzGFWE=</dsig:DigestValue>
+        <dsig:DigestValue>DXEz0cmMyAH1hPKHEwcb5INDaYwwiXulXUHhMF5Ws2M=</dsig:DigestValue>
       </hash>
     </dependentAssembly>
   </dependency>
-  <file name="PDFReportes.exe.config" size="2189">
+  <file name="PDFReportes.exe.config" size="2326">
     <hash>
       <dsig:Transforms>
         <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
       </dsig:Transforms>
       <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha256" />
-      <dsig:DigestValue>zdoUc8a044pTQ0rBByv7op2i0fkZaDwc5eS9EL/mWJE=</dsig:DigestValue>
+      <dsig:DigestValue>+9VDgoiaXnl7PeyemT17XzWk1sJluvbIKVzdnawg2AY=</dsig:DigestValue>
     </hash>
   </file>
   <file name="Recursos\Icono.ico" size="99678">
