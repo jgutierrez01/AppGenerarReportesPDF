@@ -54,14 +54,14 @@
     </dependentAssembly>
   </dependency>
   <dependency>
-    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="PDFReportes.exe" size="195104">
+    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="PDFReportes.exe" size="196128">
       <assemblyIdentity name="PDFReportes" version="1.0.0.0" language="neutral" processorArchitecture="msil" />
       <hash>
         <dsig:Transforms>
           <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
         </dsig:Transforms>
         <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha256" />
-        <dsig:DigestValue>DXEz0cmMyAH1hPKHEwcb5INDaYwwiXulXUHhMF5Ws2M=</dsig:DigestValue>
+        <dsig:DigestValue>m437qhCOxfp+YAYAP9aoxO+dK6z54jVwxAHTm+sxQqs=</dsig:DigestValue>
       </hash>
     </dependentAssembly>
   </dependency>

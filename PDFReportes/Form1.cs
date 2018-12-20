@@ -191,7 +191,8 @@ namespace PDFReportes
                                             Util.Instance.Intermedio_X_Spool(proyecto.ProyectoID, item.NumeroControl, proyecto.RutaReportes);
                                             Util.Instance.Acabado_X_Spool(proyecto.ProyectoID, item.NumeroControl, proyecto.RutaReportes);
                                             Util.Instance.Adherencia_X_Spool(proyecto.ProyectoID, item.NumeroControl, proyecto.RutaReportes);
-                                            Util.Instance.Dimensional_X_Spool(proyecto, item.NumeroControl, proyecto.RutaReportes);
+                                            Util.Instance.Dimensional_X_Spool(proyecto, item.NumeroControl, proyecto.RutaReportes, item.Dimensional);
+                                            //Util.Instance.Dimensional_X_Spool(proyecto, item.NumeroControl, proyecto.RutaReportes, item.Dimensional);
                                             Util.Instance.Espesores_X_Spool(proyecto.ProyectoID, item.NumeroControl, proyecto.RutaReportes);
                                             ListaNumeroControl.Add(new NumeroControlClass { NumeroControl = item.NumeroControl });
                                             numSpool++;

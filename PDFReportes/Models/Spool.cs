@@ -13,6 +13,7 @@ namespace PDFReportes.Models
         public string Consecutivo { get; set; }
         public int NumeroPaginas { get; set; }
         public bool AplicaGranel { get; set; }
+        public string Dimensional { get; set; }
     }
 
     public class Reporte
