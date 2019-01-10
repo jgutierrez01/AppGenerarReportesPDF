@@ -214,11 +214,11 @@ namespace PDFReportes
                                         {                                            
                                             Util.Instance.UnirArchivos(proyecto.FolioDimensional, ListaSpool, Listas);                                            
                                             if (Util.Instance.GenerarParticionamiento(ListaSpool, emb.NumeroEmbarque, RutaGuardar, Listas))
-                                            {
+                                            {                                             
                                                 ////CIERRA CSV
                                                 Util.Instance.CerrarArchivoCSV();
                                                 MessageBox.Show("Archivo Generado Correctamente en la ruta: " + Environment.NewLine + RutaGuardar,
-                                                    "Correcto", MessageBoxButtons.OK, MessageBoxIcon.Information);                                                
+                                                    "Correcto", MessageBoxButtons.OK, MessageBoxIcon.Information);                                                                                              
                                             }
                                             else
                                             {
